@@ -1,0 +1,169 @@
+/* ── Design tokens + reset, lifted from the sister site (CUE) ──────────────
+   Copied on purpose, not shared through a package. This repo has to clone and
+   run on its own - a private dependency on a client repo would make it
+   unrunnable for anyone else. The two products started from one design
+   language; from here they are free to diverge. */
+
+/* Self-hosted Inter (variable 300-700, subset latin) - satu-satunya font, dipakai
+   body & heading (Playfair dicoba lalu dibuang - kerasa lebay). Nggak request ke
+   Google. Ganti/rename -> update preload di semua HTML. font-display: swap. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+}
+:root {
+  --color-green: #5c5c5c;
+  --color-gold: #22201c;
+  --color-gold-d: #16140f;
+  /* Primary button color (Sep 2026, Wayan opsi B) - terpisah dari --color-gold
+     dengan sengaja: gold/soft-black masih dipakai buat aksen lain (judul section,
+     divider, nav, state aktif), hijau ini KHUSUS tombol aksi utama biar lebih
+     "manggil mata" tanpa nyampur peran sama warna lain. */
+  --color-cta: #3d5c46;
+  --color-cta-d: #2f4737;
+  /* Gold BENERAN (Sep 2026, Wayan) - dipisah dari --color-gold (yang sekarang soft-black,
+     bukan gold literal) buat elemen yang gold-nya punya makna konvensi visual, bukan
+     cuma aksen: bintang rating, harga, badge "Popular"/featured. Selain 3 itu TETAP
+     --color-gold (soft-black) - jangan ikut disamain kalau nemu lagi. */
+  --color-amber: #c9a45c;
+  --color-amber-d: #b08d43;
+  --color-cream: #f8f8f8;
+  --line: #e7e4dd;
+  --font-body: "Inter", system-ui, sans-serif;
+  /* Satu font: Inter buat body & heading (Playfair udah dibuang). */
+  --font-head: "Inter", system-ui, sans-serif;
+  /* ---- Type scale (DRY): base 16px, ratio 1.25 -> 16/20/25/31/39 ----
+     Display/h2 sengaja diturunin dari step formal (31-39 / 25) - lebih kecil
+     & bobot lebih ringan kerasa lebih tenang buat heading sans satu font. */
+  --fs-display: clamp(1.75rem, 4vw, 2.5rem);
+  --fs-h2: 1.125rem; /* was 1.375rem - Wayan, trim step B */
+  --fs-h3: 0.875rem; /* was 1rem - Wayan, samain sama --fs-strong */
+  --fs-strong: 0.875rem; /* was 1rem - Wayan, samain sama --fs-h3 */
+  --fs-body: 0.8rem; /* Sep 2026, Wayan: semua teks paragraf/deskripsi/label/meta
+    dikecilin ke 0.8rem - H1/H2/H3, harga, dan tombol TIDAK ikut (masing-masing
+    unhooked ke nilai eksplisit sendiri biar gak ke-drag token ini). */
+  --fs-field: 0.8rem; /* was 0.875rem - Wayan, samain sama --fs-body/--fs-small */
+  --fs-small: 0.8rem;
+  --fs-label: 0.64rem;
+  --lh-body: 1.6;
+  --lh-heading: 1.15;
+  /* ---- Spacing scale (8px base): 8/16/24/32/48/64 ---- */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4rem;
+  /* Jarak vertikal seragam antar-section homepage (Sep 2026, Wayan): 36px.
+     Sengaja di antara space-4 (32) & space-5 (48) - dipakai sbg MARGIN gap. */
+  --section-gap: 2.25rem;
+  /* ---- Container widths (Agu 2026, Wayan): 4 tingkat resmi biar margin kiri/kanan
+     antar-halaman selaras. Tiap halaman WAJIB pilih salah satu, jangan bikin lebar
+     baru. `--container` wide (listing/homepage/guide hub) · `--container-mid` halaman
+     konten tengah (contact/about/faq/charter) · `--container-read` kolom baca sempit
+     (legal/artikel guide) - sengaja lebih sempit demi panjang baris yang enak dibaca.
+     Booking detail (`.tour-layout--book`, ~1280px) layout khusus, TIDAK ikut token ini.
+     `--container-x` = padding kiri/kanan seragam (juga jaga jarak tepi di tablet). */
+  --container: 1200px;
+  --container-mid: 1080px;
+  --container-read: 720px;
+  --container-x: var(--space-3);
+  /* ---- Border radius scale (Agu 2026, Wayan): 5 tingkat resmi biar sudut konsisten.
+     Dulu berserakan 5/6/7/8/9/10/11/12/13/14/16/20/22px - hasil nambah komponen dari
+     waktu ke waktu, beda tipis gak kebedaan di mata. Semua di-snap ke tangga terdekat
+     (geser maks ~2px). YANG DIBIARIN: `50%` (bulat/avatar), `2px`/`3px` (bar tipis mis.
+     underline judul - sengaja kecil, jangan ikut dibulatin), `0` (no-radius eksplisit). */
+  --r-sm: 8px;   /* chip, tag, pay-chip, field kecil, kalender */
+  --r-md: 12px;  /* field, kartu kecil, faq item, modal box, booking card */
+  --r-lg: 16px;  /* kartu (experience/review/driver), panel, container kartu */
+  --r-xl: 22px;  /* modal besar, hero card, box charter, sudut atas sheet */
+  --r-pill: 999px; /* tombol, chip pill, toggle */
+  /* ---- Shadow scale (Agu 2026, Wayan minta subtle): 4 tingkat elevasi neutral +
+     focus-ring. Sengaja HALUS (opacity rendah) - kartu "nempel halus" ke background,
+     bukan ngambang berat. DIBIARIN (jangan di-merge, itu disengaja): bayangan green-tint
+     `rgba(31,61,43,x)` (kehangatan brand: booksidebar, driver hover, navbar), directional/
+     offset-negatif (trip-bar, panel akun geser, book-bar - nyorot ke atas/samping), animasi
+     glow booksidebar, focus-ring error merah, hairline `0 0 0 1px`. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 14px 34px rgba(0, 0, 0, 0.08);
+  --focus-ring: 0 0 0 3px rgba(34, 32, 28, 0.18);
+  /* ---- Motion (Agu 2026): durasi transisi + easing dipusatin biar animasi satu ritme.
+     Cuma buat `transition:` (feedback interaksi: hover/focus/state). DIBIARIN: durasi
+     `animation:` entrance (0.4-0.6s, choreography sengaja), fade lambat 0.5s, dan special
+     (marquee 35s, glow booksidebar 2-3s). Keyword `ease` juga dibiarin (udah konsisten). */
+  --dur-fast: 0.15s; /* hover kecil, state cepet */
+  --dur: 0.2s;       /* default transisi */
+  --dur-slow: 0.3s;  /* transform lebih gede */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);      /* standar (material) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* entrance (expo-out), buat masuk halus */
+  /* ---- Icon size (Agu 2026): ikon kecil inline dulu berserakan 13-23px (diketik manual
+     per komponen), di-snap ke 3 tingkat (geser maks ~3px). DIBIARIN: ikon besar 30-56px
+     (avatar, lingkaran step, ikon sukses centang) - itu beda peran, bukan ikon inline. */
+  --icon-sm: 16px; /* ikon meta (jam/lokasi/pax), kontak, chip, sosmed */
+  --icon-md: 20px; /* nav cart/akun, book-bar, toggle, search */
+  --icon-lg: 24px; /* ikon aksi lebih besar */
+  /* ---- Form control height (Agu 2026): tinggi field/select standar biar semua form
+     seragam (dulu contact 33px vs booking/charter 46px). Varian compact 2.7rem (itinerary
+     builder, hero mobile) sengaja lebih pendek, dibiarin. */
+  --field-h: 2.1rem; /* ~33px - form dikecilin nyesuain body text 0.8rem (Wayan) */
+  /* ---- Button height (Sep 2026, Wayan pilih "A" = SEMUA tombol aksi satu ukuran
+     kecil). Nilainya sama dengan --field-h hari ini, TAPI sengaja token sendiri:
+     kalau tinggi field diubah lagi, tombol gak ikut kegeser diam-diam.
+     Ini NGE-OVERRIDE catatan lama "CTA sengaja 2.9rem, boleh lebih tinggi dari
+     field" - Wayan ngeliat hasil ukurnya dulu (67 tombol di halaman build asli,
+     nol halaman melar, dokumen malah memendek) baru mutusin. */
+  --btn-h: 2.1rem; /* 33.6px */
+  /* ---- DRY tokens (nilai sama, dipusatin) ---- */
+  --color-muted: #7a7466;
+  --color-gold-l: #cfc9ba; /* kicker/label di atas foto gelap — tetap terang (bukan hitam), biar kebaca */
+  --color-ok: #2e7d54; /* status sukses/booked */
+  --color-err: #9a4a3f; /* error/warning/hapus */
+  --color-ink: #46453f;
+  --gold-edge: linear-gradient(150deg, var(--color-gold), rgba(34, 32, 28, 0.25));
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Press feedback (Sep 2026, Wayan: "pas button di klik gak ada animasi").
+   Belongs with the reset, not with a component: there are ~99 hand-rolled
+   <button> tags on this site and only a handful go through the shared Button
+   primitive, so per-component classes would miss most of them.
+
+   Uses the standalone `scale` property, NOT `transform: scale()` - cards and
+   CTAs already animate `transform` on hover (translateY lift) and the two would
+   overwrite each other. `scale` composes with `transform` instead of replacing it.
+
+   The transition sits at element specificity ON PURPOSE (0,0,1): a component
+   that declares its own `transition` utility (0,1,0) still wins, and just gets
+   an instant press instead of an eased one. The `:active` rule is 0,1,1 so the
+   feedback itself always lands, whatever the component declares. */
+button,
+[role="button"],
+a[class~="rounded-pill"] {
+  transition-property: scale;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease);
+}
+
+button:not(:disabled):active,
+[role="button"]:active,
+a[class~="rounded-pill"]:active {
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  [role="button"]:active,
+  a[class~="rounded-pill"]:active {
+    scale: 1;
+  }
+}

@@ -1,0 +1,80 @@
+/* Tailwind WITHOUT preflight - tokens.css already ships its own reset
+   (* { margin:0; padding:0; box-sizing:border-box }), and preflight under it
+   would change rendering: block images, unstyled headings, zeroed borders.
+
+   Utilities imported UNLAYERED. The reset in tokens.css is unlayered too, and
+   an unlayered rule ALWAYS beats a rule inside @layer - so utilities placed in
+   layer(utilities) would lose to `*` and e.g. `px-6` would get zeroed. Unlayered,
+   utilities win on specificity instead: `.px-6` (0,1,0) > `*` (0,0,0).
+   Do NOT move this back into a layer.
+
+   Theme stays in layer(theme) - it is only variables, so it never enters the
+   cascade fight. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css";
+
+@import "./tokens.css";
+
+/* Mirror of the :root tokens in tokens.css, in the shape Tailwind wants:
+   --color-* becomes bg-/text-/border-, --radius-* becomes rounded-*,
+   --text-* becomes text-*. Values must stay identical to tokens.css - change
+   a brand token and you change BOTH, in the same commit. */
+@theme {
+  --color-green: #5c5c5c;
+  --color-gold: #22201c;
+  --color-gold-d: #16140f;
+  --color-gold-l: #cfc9ba;
+  --color-cta: #3d5c46;
+  --color-cta-d: #2f4737;
+  --color-amber: #c9a45c;
+  --color-amber-d: #b08d43;
+  --color-cream: #f8f8f8;
+  --color-line: #e7e4dd;
+  --color-ok: #2e7d54;
+  --color-err: #9a4a3f;
+  --color-ink: #46453f;
+  --color-muted: #7a7466;
+
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-head: "Inter", system-ui, sans-serif;
+
+  --text-display: clamp(1.75rem, 4vw, 2.5rem);
+  --text-h2: 1.125rem;
+  --text-h3: 0.875rem;
+  --text-strong: 0.875rem;
+  --text-body: 0.8rem;
+  --text-field: 0.8rem;
+  --text-small: 0.8rem;
+  --text-label: 0.64rem;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 14px 34px rgba(0, 0, 0, 0.08);
+
+  --container-wide: 1200px;
+  --container-mid: 1080px;
+  --container-read: 720px;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: #fff;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
