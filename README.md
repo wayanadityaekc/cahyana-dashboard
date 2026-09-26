@@ -125,6 +125,43 @@ would be allowed, and who is connected right now.
 Everything else still goes through this app's own routes, and the admin token still never
 leaves the server: the browser gets a one-shot ticket instead, good for about thirty seconds.
 
+## The seasonal sale
+
+A **Sale** section next to Prices: one percentage off every program, with a last
+day. It is a **price change, not a payment option**, which is why it sits beside
+Prices and why `payment.js` in the API never hears about it.
+
+- **Programs only** - tours, tour packages, destinations, experiences,
+  performances. Transfers, charters and the pick-up fee are **not** discounted:
+  those are priced off a car and a driver, so a cut there is nearly all margin.
+- **It never stacks with a referral code, and there is no switch for that.** The
+  API refuses a sale below the referral discount (5%), so the sale is always the
+  bigger of the two and a code simply steps aside while one runs. Guaranteeing it
+  by construction beats writing "best of" as arithmetic that three files and two
+  rounding modes have to agree on.
+- **The demo has its own sale**, in the visitor's own cookie, with the **same
+  validation** the live route applies - so the demo teaches the real rules. A
+  demo request still never reaches the real API.
+- Prices on the site follow within about half a minute (the API caches the sale
+  with a TTL, because Railway can run more than one instance).
+
+### Verifying it
+
+```
+DEMO_ENABLED=true DEMO_USER=demo DEMO_PASS=demo npx next start -p 3100
+node verify-promoui.mjs                       # 22/22
+```
+
+Tested with three real bugs: the POST envelope read as a body (8 fail), the
+Prices catch-all restored so the price list drew under the Sale heading (16),
+and the percentage floor removed (2).
+
+**One gotcha worth carrying:** `postJson` returns the **envelope** - `{ status,
+json }` - while `getJson` returns the **body**. Reading a POST result as a body
+leaves the state undefined, and the screen then looks exactly like a button that
+does nothing: no result, no error, no change. That is how this shipped the first
+time and what the harness caught.
+
 ## Installing it on a phone
 
 The dashboard is a PWA: add it to the home screen and it opens without browser
