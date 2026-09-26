@@ -125,6 +125,37 @@ would be allowed, and who is connected right now.
 Everything else still goes through this app's own routes, and the admin token still never
 leaves the server: the browser gets a one-shot ticket instead, good for about thirty seconds.
 
+## Editing the site's words
+
+A **Content** section: pick a legal page, retype it, **Publish**. Publishing
+**commits to the site's repo** and CI rebuilds - so it is about three minutes,
+not instant, and the panel says so and reports the build result afterwards.
+
+- **Drafts live on the server**, so closing the tab or moving to the phone keeps
+  them. The button carries a count: `Publish (3)`.
+- **There is no "add a paragraph" button, on purpose.** The API refuses any draft
+  whose structure differs from the live file - a new page, an extra block, a
+  changed block type. The editor can retype what is there and nothing else.
+  Adding a clause is a change to the *page*, not to its *words*, and it needs its
+  own (more careful) piece of work.
+- **The demo can type but cannot publish**, and says so. A demo that pretends to
+  have published is worse than one that does nothing.
+
+**Gotcha worth carrying: 401 and 403 mean ONE thing here - the session is gone.**
+`lib/api.js` turns either into `Unauthorized`, which sends the visitor to
+`/login`. The demo's publish refusal first answered 403, so clicking Publish
+logged you out and the panel vanished instead of explaining itself. Any "no, but
+you are still signed in" answer must be a **400**.
+
+The rules that actually protect the repo are server-side (allowlisted paths,
+structure-only-unchanged, a four-tag sanitiser, and a commit that carries the
+file's sha). See the content section in `cahyana-api`'s CLAUDE.md.
+
+```
+DEMO_ENABLED=true DEMO_USER=demo DEMO_PASS=demo npx next start -p 3100
+node verify-content.mjs                       # 24/24
+```
+
 ## The seasonal sale
 
 A **Sale** section next to Prices: one percentage off every program, with a last
