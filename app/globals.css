@@ -16,6 +16,19 @@
 
 @import "./tokens.css";
 
+/* app mode = opened from the home-screen icon, not from a browser tab. TWO
+   selectors, deliberately, because one does not cover every phone:
+     - @media (display-mode: standalone) = Chrome/Android and Safari iOS 16.4+.
+     - html[data-standalone] = older iPhones, which only expose
+       navigator.standalone and never match the query above. PwaRegister writes
+       that attribute on mount.
+   Same definition as the public site, for the same reason: one place, so a
+   device cannot be forgotten in half of them. */
+@custom-variant standalone {
+  @media (display-mode: standalone) { @slot; }
+  html[data-standalone] & { @slot; }
+}
+
 /* Mirror of the :root tokens in tokens.css, in the shape Tailwind wants:
    --color-* becomes bg-/text-/border-, --radius-* becomes rounded-*,
    --text-* becomes text-*. Values must stay identical to tokens.css - change

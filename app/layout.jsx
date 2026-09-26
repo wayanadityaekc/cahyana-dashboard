@@ -1,4 +1,5 @@
 import './globals.css';
+import PwaRegister from '@/components/PwaRegister';
 
 export const metadata = {
   title: 'Cahyana Dashboard',
@@ -9,6 +10,11 @@ export const metadata = {
 };
 
 export const viewport = { width: 'device-width', initialScale: 1 };
+
+// Installable from the home screen. The tile is the SITE's monogram on the
+// brand soft-black instead of the gold - both apps land on the same phone, and
+// two identical tiles under two labels is a daily annoyance. See
+// tools/make-icons.js; nothing was drawn, only the tile colour swapped.
 
 export default function RootLayout({ children }) {
   return (
@@ -23,8 +29,19 @@ export default function RootLayout({ children }) {
           type="font/woff2"
           crossOrigin="anonymous"
         />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Dashboard" />
       </head>
-      <body>{children}</body>
+      {/* Room for the bottom bar, reserved only where the bar exists. */}
+      <body className="standalone:max-[993px]:pb-[56px]">
+        <PwaRegister />
+        {children}</body>
     </html>
   );
 }

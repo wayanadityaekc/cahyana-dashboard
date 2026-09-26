@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
+import AppBottomNav from '@/components/AppBottomNav';
 import { RAIL_PAGE } from '@/components/ui/railClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
@@ -181,6 +182,18 @@ export default function Dashboard({ demo = false }) {
         )}
         {isBookings && rows.map((g) => <BookingCard key={g.ref || g.id} g={g} />)}
       </RailLayout>
+
+      {/* Same two pieces of state the rail drives, so the bar and the rail can
+          never disagree about which section is open. */}
+      <AppBottomNav
+        active={tab}
+        onPick={(id) => { setTab(id); setReading(true); }}
+        counts={{
+          attention: data ? (data.attention || []).length : 0,
+          upcoming: data ? (data.upcoming || []).length : 0,
+          chat: unread || 0,
+        }}
+      />
     </div>
   );
 }
