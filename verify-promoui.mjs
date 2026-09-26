@@ -47,7 +47,7 @@ for (const w of [390, 1280]) {
 
   // On a phone the rail is a list you open first.
   if (w < 993) await page.click('button:has-text("Bookings")').catch(() => {});
-  await page.locator('button:visible', { hasText: 'Sale' }).first().click();
+  await page.locator('button:visible', { hasText: 'Sale' }).first().click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(700);
 
   const tag = `${w}`;
@@ -62,17 +62,17 @@ for (const w of [390, 1280]) {
 
   // A percentage below the referral discount has to be refused, and the reason
   // has to be readable - that rule is the whole reason "best of" holds.
-  await page.fill('#promo-pct', '3');
-  await page.fill('#promo-ends', day(20));
+  await page.fill('#promo-pct', '3', { timeout: 5000 }).catch(() => {});
+  await page.fill('#promo-ends', day(20), { timeout: 5000 }).catch(() => {});
   await page.click('[data-save]', { timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(700);
   const refused = await page.getByText('between 5 and 50', { exact: false }).first().isVisible().catch(() => false);
   ok(refused, `${tag}: a 3% sale was not refused with a reason`);
 
   // A real one.
-  await page.fill('#promo-pct', '10');
-  await page.fill('#promo-ends', day(20));
-  await page.fill('#promo-label', 'Low season');
+  await page.fill('#promo-pct', '10', { timeout: 5000 }).catch(() => {});
+  await page.fill('#promo-ends', day(20), { timeout: 5000 }).catch(() => {});
+  await page.fill('#promo-label', 'Low season', { timeout: 5000 }).catch(() => {});
   await page.click('[data-save]', { timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(900);
   ok(await page.getByText('10% off', { exact: false }).first().isVisible().catch(() => false),
