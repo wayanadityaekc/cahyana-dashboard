@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
+import { Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import { RAIL_PAGE } from '@/components/ui/railClasses';
@@ -10,6 +10,7 @@ import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
 import BookingCard from '@/components/admin/BookingCard';
 import PricesPanel from '@/components/admin/PricesPanel';
+import PromoPanel from '@/components/admin/PromoPanel';
 import ChatPanel from '@/components/admin/ChatPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
@@ -31,6 +32,9 @@ const SECTIONS = [
   // Separated from the four booking buckets: those are one list seen four ways,
   // this is a different job. Same reason the site's rail splits About from Legal.
   { id: 'prices', label: 'Prices', Icon: Tag, split: true },
+  // Next to Prices because it IS a price change - one percentage off every
+  // program, with an end date. Not a payment option; see PromoPanel.
+  { id: 'promo', label: 'Sale', Icon: Percent },
   // Guests the site's support panel could not answer. Its own job, like prices -
   // not a fifth way of looking at the bookings.
   { id: 'chat', label: 'Chat', Icon: MessageCircle },
@@ -95,6 +99,7 @@ export default function Dashboard({ demo = false }) {
 
   const isBookings = BOOKING_TABS.includes(tab);
   const isChat = tab === 'chat';
+  const isPromo = tab === 'promo';
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -117,7 +122,9 @@ export default function Dashboard({ demo = false }) {
           ? `Bookings as they stand${data?.today ? ` - today in Bali is ${data.today}` : ''}.`
           : isChat
             ? 'Guests the chat on the site could not answer by itself.'
-            : 'Change a price here and it applies straight away, no deploy.'}
+            : isPromo
+              ? 'One percentage off every program, with a last day. Programs only.'
+              : 'Change a price here and it applies straight away, no deploy.'}
       </p>
 
       {/* Said once, at the top, on every section: nobody should mistake a
@@ -173,7 +180,8 @@ export default function Dashboard({ demo = false }) {
         </div>
 
         {isChat && <ChatPanel onExpired={expired} onUnread={setUnread} />}
-        {!isBookings && !isChat && <PricesPanel onExpired={expired} />}
+        {isPromo && <PromoPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}
