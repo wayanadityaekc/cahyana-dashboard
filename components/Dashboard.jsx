@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import { RAIL_PAGE } from '@/components/ui/railClasses';
@@ -11,6 +11,7 @@ import { FIELD_INPUT } from '@/components/ui/formClasses';
 import BookingCard from '@/components/admin/BookingCard';
 import PricesPanel from '@/components/admin/PricesPanel';
 import PromoPanel from '@/components/admin/PromoPanel';
+import ContentPanel from '@/components/admin/ContentPanel';
 import ChatPanel from '@/components/admin/ChatPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
@@ -35,6 +36,9 @@ const SECTIONS = [
   // Next to Prices because it IS a price change - one percentage off every
   // program, with an end date. Not a payment option; see PromoPanel.
   { id: 'promo', label: 'Sale', Icon: Percent },
+  // The site's own words. A change here is a commit and a rebuild, not a
+  // setting - see ContentPanel.
+  { id: 'content', label: 'Content', Icon: FileText },
   // Guests the site's support panel could not answer. Its own job, like prices -
   // not a fifth way of looking at the bookings.
   { id: 'chat', label: 'Chat', Icon: MessageCircle },
@@ -100,6 +104,7 @@ export default function Dashboard({ demo = false }) {
   const isBookings = BOOKING_TABS.includes(tab);
   const isChat = tab === 'chat';
   const isPromo = tab === 'promo';
+  const isContent = tab === 'content';
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -124,7 +129,9 @@ export default function Dashboard({ demo = false }) {
             ? 'Guests the chat on the site could not answer by itself.'
             : isPromo
               ? 'One percentage off every program, with a last day. Programs only.'
-              : 'Change a price here and it applies straight away, no deploy.'}
+              : isContent
+                ? 'The words on the site. Publishing rebuilds it - about three minutes.'
+                : 'Change a price here and it applies straight away, no deploy.'}
       </p>
 
       {/* Said once, at the top, on every section: nobody should mistake a
@@ -181,7 +188,8 @@ export default function Dashboard({ demo = false }) {
 
         {isChat && <ChatPanel onExpired={expired} onUnread={setUnread} />}
         {isPromo && <PromoPanel onExpired={expired} />}
-        {!isBookings && !isChat && !isPromo && <PricesPanel onExpired={expired} />}
+        {isContent && <ContentPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && !isContent && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}
