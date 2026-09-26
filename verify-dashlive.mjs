@@ -29,6 +29,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Report, never throw: one failed wait must not hide every assertion after it.
 const seen = async (loc, ms = 5000) => { try { await loc.first().waitFor({ timeout: ms }); return true; } catch { return false; } };
 const untilTrue = async (page, fn, ms = 10000) => { try { await page.waitForFunction(fn, null, { timeout: ms }); return true; } catch { return false; } };
+// Reading an element that is not there throws, and a throw hides every assertion
+// after it. Sabotaging the demo branch logged the page out, and the run died on a
+// getAttribute instead of reporting which rule broke.
+const attr = async (loc, name) => { try { return await loc.first().getAttribute(name, { timeout: 3000 }); } catch { return null; } };
+const text = async (loc) => { try { return await loc.first().innerText({ timeout: 3000 }); } catch { return ''; } };
+const count = async (loc) => { try { return await loc.count(); } catch { return -1; } };
 
 // Signing in, with the ONE failure mode that has wasted the most time on this
 // dashboard named out loud: /api/session allows 5 attempts per 15 minutes per IP
@@ -95,7 +101,7 @@ await page.locator('nav[aria-label] >> text=Chat').first().click();
 ok(await seen(page.locator('[data-live]'), 8000), 'the chat column never rendered');
 ok(await untilTrue(page, () => document.querySelector('[data-live]')?.getAttribute('data-live') === '1', 12000),
   'the dashboard never got a live socket - the ticket exchange or the upgrade failed');
-ok(await page.locator('[data-live]').getAttribute('data-live') === '1', 'the dashboard is not live');
+ok(await attr(page.locator('[data-live]'), 'data-live') === '1', 'the dashboard is not live');
 
 // The guest who was already waiting must be in the list.
 ok(await seen(page.locator('text=Priya'), 6000), 'the waiting guest is not in the list');
@@ -123,7 +129,7 @@ await new Promise((r, j) => { gsock.once('open', r); gsock.once('error', j); });
 gsock.send(JSON.stringify({ type: 'typing' }));
 ok(await seen(page.locator('[data-typing]'), 3000), 'the guest typing never reached the dashboard');
 await sleep(5000);
-ok(await page.locator('[data-typing]').count() === 0, 'the typing row never expired');
+ok(await count(page.locator('[data-typing]')) === 0, 'the typing row never expired');
 
 // --- and the reply goes back down the guest's socket --------------------
 const frames = [];
@@ -148,7 +154,7 @@ await sleep(800);
 // Scoped to the conversation. [data-live] wraps the LIST too, and the list's
 // preview line legitimately repeats the newest message ("You: ..."), so counting
 // across the whole column reported a duplicate that was never there.
-const body = await page.locator('[data-chatbody]').innerText();
+const body = await text(page.locator('[data-chatbody]'));
 ok((body.match(/UNIQUE2/g) || []).length === 1, 'the reply was shown twice - the optimistic add and the echo both counted');
 
 // --- demo mode must never try to be live -------------------------------
@@ -160,7 +166,7 @@ ok(await untilTrue(dpage, () => new URL(location.href).pathname === '/', 15000),
 await dpage.locator('nav[aria-label] >> text=Chat').first().click();
 ok(await seen(dpage.locator('[data-live]'), 8000), 'the demo chat column never rendered');
 await sleep(2500);
-ok(await dpage.locator('[data-live]').getAttribute('data-live') === '0', 'demo mode reported itself live - it has no API to be live with');
+ok(await attr(dpage.locator('[data-live]'), 'data-live') === '0', 'demo mode reported itself live - it has no API to be live with');
 // FROM THE PAGE, not from ctx.request. The session cookie is Secure (next start
 // runs in production mode) and Playwright's APIRequestContext will not send a
 // Secure cookie over http, while the browser will - 127.0.0.1 counts as a
@@ -169,8 +175,10 @@ ok(await dpage.locator('[data-live]').getAttribute('data-live') === '0', 'demo m
 // logged the page out and then blamed the route. Only a local artifact - a real
 // deployment is https - but it cost an hour.
 const tj = await dpage.evaluate(async () => {
-  const r = await fetch('/api/ws-ticket', { method: 'POST' });
-  return { status: r.status, body: await r.json().catch(() => ({})) };
+  try {
+    const r = await fetch('/api/ws-ticket', { method: 'POST' });
+    return { status: r.status, body: await r.json().catch(() => ({})) };
+  } catch (e) { return { status: 0, body: { error: String(e) } }; }
 });
 ok(tj.status === 200, `the demo ticket route answered ${tj.status}`);
 ok(tj.body.demo === true && !tj.body.url, `demo asked for a real socket url: ${JSON.stringify(tj.body)}`);

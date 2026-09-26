@@ -109,6 +109,22 @@ npm run dev
 `DEMO_ENABLED` is off unless the deployment says otherwise, so a checkout with no env file has
 no open door.
 
+### One thing the API has to know about this deployment
+
+The chat column holds a WebSocket, and that is the **only** request this app's browser makes
+straight to cahyana-api instead of through the BFF - a socket cannot be proxied through a
+serverless route. So the API's origin allowlist has to include wherever this is deployed:
+`EXTRA_ORIGINS=https://your-dashboard-domain`, or `ALLOW_VERCEL_PREVIEWS=true` while it is
+still on a `*.vercel.app` URL.
+
+Get it wrong and nothing breaks loudly: the upgrade is refused, the panel falls back to
+polling every 8 seconds, and the only sign is that replies stop feeling instant.
+**`GET /api/admin/ws-check`** on the API answers it - it prints the origin it saw, whether it
+would be allowed, and who is connected right now.
+
+Everything else still goes through this app's own routes, and the admin token still never
+leaves the server: the browser gets a one-shot ticket instead, good for about thirty seconds.
+
 ## Verifying it
 
 `verify-dash2.mjs` drives a real browser against a real build at 390, 768 and 1280 (71 assertions):
@@ -118,6 +134,22 @@ them* (not as numbers typed into the test), the rail at 248px on desktop and abs
 phone, no sideways overflow, the demo banner, a reachable Sign out, the price panel loading,
 the login rate limit actually biting, and the chat: two threads, an unread count on the one
 waiting, a reply appearing immediately and still being there after a reload.
+
+`verify-dashlive.mjs` covers what that one cannot: it points `CAHYANA_API` at a real API and
+puts a guest on the other end (28 assertions). A guest's message reaching an open conversation
+**with the conversation never re-read** - the only airtight version of "that was not a poll" -
+the ticket exchange, typing in both directions, the reply arriving down the guest's own socket,
+and demo mode refusing to reach for a socket it has no API for.
+
+```bash
+node ../cahyana-api/tools/chat-dev-server.js     # the API, database in memory
+CAHYANA_API=http://127.0.0.1:4599/api npm run build && npm start -- -p 3101
+node verify-dashlive.mjs
+```
+
+**Restart the dashboard before every run.** Sign-in is limited to 5 attempts per 15 minutes and
+the counter lives in the server process; the harness names that failure explicitly, because it
+used to surface as a 401 from an unrelated route much later.
 
 Each check was confirmed by **putting the bug back**: removing the token import (9 failures),
 serving bookings without a session (6), and removing the login limiter (1).

@@ -267,7 +267,7 @@ export default function ChatPanel({ onExpired, onUnread }) {
             ))}
             {guestTyping && (
               <span className={TYPING} data-typing aria-live="polite">
-                typing
+                {`${((thread && thread.guest_name) || 'Guest').trim().split(/\s+/)[0]} is typing`}
                 <i className={TDOT(0)} /><i className={TDOT(1)} /><i className={TDOT(2)} />
               </span>
             )}
