@@ -125,6 +125,69 @@ would be allowed, and who is connected right now.
 Everything else still goes through this app's own routes, and the admin token still never
 leaves the server: the browser gets a one-shot ticket instead, good for about thirty seconds.
 
+## Installing it on a phone
+
+The dashboard is a PWA: add it to the home screen and it opens without browser
+chrome, with a bottom bar instead of the hamburger. In a browser tab, and on
+desktop at any width, **nothing changes** - the rail is still the navigation
+there, because that is the better one when there is room for it.
+
+- **Bottom bar** (`components/AppBottomNav.jsx`): Attention, Upcoming, Chat,
+  Prices - the four an owner opens daily. Past and No date stay in the rail,
+  which still holds all six. The bar drives the **same two pieces of state** the
+  rail drives (`tab`, `reading`), so the two cannot disagree about what is open.
+- **`components/pwaClasses.js`** holds the one condition, and the string is
+  written out **in full on purpose**: Tailwind scans source text, so a class
+  assembled by interpolation is never generated. That exact mistake shipped on
+  the public site first and failed silently - the bar stayed `display:none` in
+  app mode with no error anywhere.
+- **`@custom-variant standalone`** (in `app/globals.css`) is deliberately two
+  selectors: `@media (display-mode: standalone)` for Chrome/Android and iOS
+  16.4+, and `html[data-standalone]` for older iPhones, which only expose
+  `navigator.standalone`. `PwaRegister` writes that attribute on mount.
+- **Its own icon, without drawing one.** Both apps land on the same phone, and
+  two identical tiles under two labels is a daily annoyance. `tools/make-icons.js`
+  takes the site's icon and swaps **only the tile** - brand gold becomes brand
+  soft-black, the monogram stays. Not a CI gate; run it by hand if the logo
+  changes and commit the output:
+
+  ```
+  node tools/make-icons.js ../CUE/public/assets/icons/icon-512.png
+  ```
+
+- **The service worker caches nothing that came from the server**, and here that
+  matters more than it does on the site: everything is live data behind a session
+  cookie. A cached page or API response is a stale answer about money, or one
+  person's answer shown to whoever picks the phone up next. `/api/` is excluded
+  outright; only `/_next/static/` and the font are cached, because their names
+  change when their contents do. Bump `VERSION` in `public/sw.js` to retire a
+  cache - there is no per-file invalidation to get wrong.
+
+### Verifying it
+
+```
+DEMO_ENABLED=true DEMO_USER=demo DEMO_PASS=demo npx next start -p 3100
+node verify-dashpwa.mjs                       # 47/47
+```
+
+Two things about this harness are worth knowing before you trust it:
+
+- **It signs in ONCE** and hands the session to all seven contexts. Signing in
+  per context blew the limiter (5 per IP per 15 minutes, counted in the server
+  process) on the sixth and failed as a navigation timeout, which reads like a
+  broken page. It now says which of the two it is - but **restart the server
+  between runs** anyway.
+- **It cannot drive the `display-mode` branch.** Measured, not assumed: this
+  Chromium honours `Emulation.setEmulatedMedia` for `prefers-color-scheme` and
+  ignores it for `display-mode`, and a headless `--app` window exposes no page.
+  So behaviour runs through `html[data-standalone]`, and the media branch is held
+  to the same declarations by comparing the two **in the built CSS**. Drop a slot
+  from the custom variant and that fires.
+
+Tested with four real bugs: the class name rebuilt by interpolation (14 fail),
+the older-iPhone branch removed (10), the site's own icon copied in (1), and the
+worker allowed to cache `/api/` (1).
+
 ## Verifying it
 
 `verify-dash2.mjs` drives a real browser against a real build at 390, 768 and 1280 (71 assertions):

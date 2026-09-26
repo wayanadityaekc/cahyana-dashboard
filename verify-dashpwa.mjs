@@ -33,7 +33,16 @@ const bootstrap = async (browser) => {
   await page.fill('#adm-user', 'demo');
   await page.fill('#adm-pass', 'demo');
   await page.click('button[type=submit]');
-  await page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 20000 });
+  const landed = await page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 20000 })
+    .then(() => true).catch(() => false);
+  if (!landed) {
+    // Say which of the two it is. A raw timeout here reads like a broken page,
+    // and four times out of five it is the limiter: 5 sign-ins per IP per 15
+    // minutes, counted in the server process, so a fourth run in a row against
+    // the same process cannot get in.
+    console.log("  FAIL: could not sign in - RESTART THE SERVER (login is rate limited per process), or the demo env is not set");
+    process.exit(1);
+  }
   SESSION = await ctx.storageState();
   await ctx.close();
 };
