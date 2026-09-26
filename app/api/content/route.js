@@ -12,7 +12,7 @@ function expired() {
   return res;
 }
 
-const KINDS = ['legal'];
+const KINDS = ['legal', 'tours'];
 const kindOf = (req) => {
   const k = new URL(req.url).searchParams.get('kind') || 'legal';
   return KINDS.includes(k) ? k : null;
@@ -26,7 +26,7 @@ export async function GET(req) {
 
   // The demo shows the editor against a small fixture. It never reaches the API
   // and it cannot publish - see POST.
-  if (s.demo) return NextResponse.json(demoContent(), { headers: { 'Cache-Control': 'no-store' } });
+  if (s.demo) return NextResponse.json(demoContent(kind), { headers: { 'Cache-Control': 'no-store' } });
 
   try {
     const out = await upstream(`/admin/content/${kind}`, { token: s.token });

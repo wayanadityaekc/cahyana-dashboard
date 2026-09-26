@@ -78,6 +78,71 @@ for (const w of [390, 1280]) {
   await page.waitForTimeout(900);
   ok((await countText()).startsWith('No changes'), `${tag}: discarding did not clear the edit (${await countText()})`);
 
+  // ---- tour details ------------------------------------------------------
+  await page.click('[data-kind="tours"]', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(900);
+
+  // It really loaded the OTHER document, rather than relabelling this one: the
+  // legal page's title field is gone and a stop has appeared.
+  ok((await page.locator('#c-title').count()) === 0, `${tag}: switching to tours left the legal fields on screen`);
+  ok(await page.locator('[data-stoptext="0"]').isVisible().catch(() => false), `${tag}: no stop text to edit`);
+  ok(await page.locator('#c-desc').isVisible().catch(() => false), `${tag}: no tour blurb field`);
+
+  // Seventeen tours do not fit on a row of tabs, so past six pages the picker is
+  // a list. That is the branch the owner actually sees.
+  ok(await page.locator('[data-pagepick]').isVisible().catch(() => false), `${tag}: many tours still rendered as tabs`);
+  ok((await page.locator('[data-page]').count()) === 0, `${tag}: both pickers rendered at once`);
+
+  // THE MONEY GUARD, from the outside: the pricing catalog key and the tour name
+  // are not offered as fields. The API refuses them too - this is the second
+  // line, and it is the one the owner meets first.
+  const values = await page.locator('input, textarea').evaluateAll(
+    (els) => els.map((e) => (e.value || '').trim()),
+  );
+  ok(!values.includes('Ubud Tour'), `${tag}: THE PRICING CATALOG KEY (bookItem) IS AN EDITABLE FIELD`);
+  ok(!values.includes('Ubud Highlights Tour'), `${tag}: the tour name is editable, and four other things read it`);
+
+  ok((await countText()).startsWith('No changes'), `${tag}: tours claims changes before anything was typed`);
+
+  // Rewording a stop.
+  await page.locator('[data-stoptext="0"]').fill('Reworded by the harness.', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  ok((await countText()).startsWith('1 unpublished change'), `${tag}: rewording a stop was not counted (${await countText()})`);
+
+  // ADDING a line to what's included - the one thing in this editor that can
+  // change the size of the document.
+  const lines = () => page.locator('[data-line^="included-"]').count();
+  const before = await lines();
+  await page.click('[data-add="included"]', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  ok((await lines()) === before + 1, `${tag}: Add a line did not add one (${before} -> ${await lines()})`);
+  await page.locator(`[data-line="included-${before}"]`).fill('Free cold water on board', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const c2 = await countText();
+  ok(/[2-9]\d* unpublished/.test(c2), `${tag}: the ADDED line did not count as a change (${c2})`);
+
+  // ...and removing one.
+  await page.click(`[data-remove="included-${before}"]`, { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  ok((await lines()) === before, `${tag}: removing a line did not remove one`);
+
+  // The last line cannot be removed: an empty list renders an empty box, and
+  // the API refuses it - so the button greys out instead of teaching a wall.
+  const exLines = await page.locator('[data-line^="excluded-"]').count();
+  for (let i = exLines - 1; i > 0; i -= 1) {
+    await page.click(`[data-remove="excluded-${i}"]`, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(150);
+  }
+  ok((await page.locator('[data-line^="excluded-"]').count()) === 1, `${tag}: could not get the list down to one line`);
+  ok(await page.locator('[data-remove="excluded-0"]').isDisabled().catch(() => false),
+     `${tag}: the last line of a list can be removed, which ships an empty box`);
+
+  // Switching back must not leave tour fields behind.
+  await page.click('[data-kind="legal"]', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(900);
+  ok((await page.locator('[data-stoptext="0"]').count()) === 0, `${tag}: tour fields survived switching back to legal`);
+  ok(await page.locator('#c-title').isVisible().catch(() => false), `${tag}: the legal fields did not come back`);
+
   const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   ok(over <= 0, `${tag}: page overflows by ${over}px`);
   ok(errs.length === 0, `${tag}: page errors ${errs.join(' | ')}`);
