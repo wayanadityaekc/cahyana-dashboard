@@ -78,3 +78,13 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
 }
+
+/* "typing" dots in the chat column. A keyframe, not a transition: the row
+   appears already running, and there is no state to transition from. Opacity
+   only, so it cannot fight the press-feedback scale. Mirrors the same animation
+   on the guest's side in CUE - the two panels are two halves of one
+   conversation, so they blink at the same rate. */
+@keyframes chatdot {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
