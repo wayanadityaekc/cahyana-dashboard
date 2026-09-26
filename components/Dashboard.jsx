@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag } from 'lucide-react';
+import { AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import { RAIL_PAGE } from '@/components/ui/railClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
 import BookingCard from '@/components/admin/BookingCard';
 import PricesPanel from '@/components/admin/PricesPanel';
+import ChatPanel from '@/components/admin/ChatPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
 // The owner's view of the bookings.
@@ -29,6 +30,9 @@ const SECTIONS = [
   // Separated from the four booking buckets: those are one list seen four ways,
   // this is a different job. Same reason the site's rail splits About from Legal.
   { id: 'prices', label: 'Prices', Icon: Tag, split: true },
+  // Guests the site's support panel could not answer. Its own job, like prices -
+  // not a fifth way of looking at the bookings.
+  { id: 'chat', label: 'Chat', Icon: MessageCircle },
 ];
 const BOOKING_TABS = ['attention', 'upcoming', 'past', 'undated'];
 
@@ -67,6 +71,9 @@ export default function Dashboard({ demo = false }) {
   // a list of section names. Back still reaches the list from here.
   const [reading, setReading] = useState(true);
   const [q, setQ] = useState('');
+  // Guest messages nobody has answered yet, shown on the rail the same way the
+  // booking buckets show their counts.
+  const [unread, setUnread] = useState(null);
 
   // An expired session is not an error to read: send them to the door.
   const expired = useCallback(() => { router.replace('/login'); }, [router]);
@@ -86,6 +93,7 @@ export default function Dashboard({ demo = false }) {
   useEffect(() => { load(); }, [load]);
 
   const isBookings = BOOKING_TABS.includes(tab);
+  const isChat = tab === 'chat';
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -93,7 +101,9 @@ export default function Dashboard({ demo = false }) {
     label: (
       <>
         {s.label}
-        {data && data[s.id] && <span className={COUNT}>{(data[s.id] || []).length}</span>}
+        {s.id === 'chat'
+          ? unread > 0 && <span className={COUNT}>{unread}</span>
+          : data && data[s.id] && <span className={COUNT}>{(data[s.id] || []).length}</span>}
       </>
     ),
   }));
@@ -104,7 +114,9 @@ export default function Dashboard({ demo = false }) {
       <p className={SUB}>
         {isBookings
           ? `Bookings as they stand${data?.today ? ` - today in Bali is ${data.today}` : ''}.`
-          : 'Change a price here and it applies straight away, no deploy.'}
+          : isChat
+            ? 'Guests the chat on the site could not answer by itself.'
+            : 'Change a price here and it applies straight away, no deploy.'}
       </p>
 
       {/* Said once, at the top, on every section: nobody should mistake a
@@ -113,9 +125,10 @@ export default function Dashboard({ demo = false }) {
         <p className={BANNER}>
           <AlertTriangle strokeWidth={1.7} aria-hidden="true" />
           <span>
-            <strong>Demo data.</strong> These bookings are made up and nothing here
-            reaches the live system. Price edits are real edits held in your own
-            browser session - refresh and they stay, sign out and they are gone.
+            <strong>Demo data.</strong> These bookings and chats are made up and
+            nothing here reaches the live system. Price edits and chat replies are
+            real edits held in your own browser session - refresh and they stay,
+            sign out and they are gone.
           </span>
         </p>
       )}
@@ -158,7 +171,8 @@ export default function Dashboard({ demo = false }) {
           </button>
         </div>
 
-        {!isBookings && <PricesPanel onExpired={expired} />}
+        {isChat && <ChatPanel onExpired={expired} onUnread={setUnread} />}
+        {!isBookings && !isChat && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}

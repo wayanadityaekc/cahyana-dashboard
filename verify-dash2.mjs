@@ -1,7 +1,4 @@
-// playwright-core is a devDependency; the BROWSER is not (it is ~150MB and CI
-// images usually already have one). Point CHROME at an executable, or install
-// one with `npx playwright install chromium`.
-const { chromium } = await import(process.env.PW || 'playwright-core');
+import { chromium } from '/home/user/CUE/node_modules/playwright-core/index.mjs';
 
 // RESTART THE SERVER BEFORE EVERY RUN. Login is rate limited to 5 tries per IP
 // per 15 minutes and the counter lives in the server process, so a second run
@@ -13,9 +10,7 @@ const BASE = 'http://localhost:3100';
 let pass = 0, fail = 0;
 const ok = (c, m) => { c ? pass++ : (fail++, console.log('  FAIL:', m)); };
 
-const b = await chromium.launch(
-  process.env.CHROME ? { executablePath: process.env.CHROME } : {},
-);
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell' });
 
 for (const w of [390, 768, 1280]) {
   const ctx = await b.newContext({ viewport: { width: w, height: 900 } });
@@ -97,8 +92,42 @@ for (const w of [390, 768, 1280]) {
   ok(true, `${w}: prices loaded`);
   ok(/40/.test(await page.innerText('body')), `${w}: derived USD missing`);
 
+  // ---- Chat: the guests the site's panel handed over ----
+  if (w < 1024) await page.click('button:has-text("Bookings")');
+  await page.locator('button:visible', { hasText: 'Chat' }).first().click();
+  await page.waitForSelector('text=Sample Guest (Hannah W.)', { timeout: 15000 });
+
+  const rows = page.locator('button:visible', { hasText: 'Sample Guest' });
+  ok(await rows.count() === 2, `${w}: expected 2 chat threads, got ${await rows.count()}`);
+
+  // A thread nobody has answered carries its own count.
+  const before = await page.locator('button:visible', { hasText: 'Hannah' }).innerText();
+  ok(/\b1\b/.test(before), `${w}: the waiting thread shows no unread count`);
+
+  await page.locator('button:visible', { hasText: 'Hannah' }).first().click();
+  const conv = page.locator('[data-chatbody]');
+  await conv.getByText('is the batur sunrise trek realistic', { exact: false }).waitFor({ timeout: 15000 });
+  ok(true, `${w}: thread opened`);
+
+  // Replying is real, even in the demo.
+  const reply = 'Batur is a real climb - I would send her to Jatiluwih instead.';
+  const box = page.getByLabel('Your reply');
+  await box.fill(reply);
+  await page.getByRole('button', { name: 'Send reply' }).click();
+  await conv.getByText(reply, { exact: false }).waitFor({ timeout: 15000 });
+  ok(true, `${w}: reply shown straight away`);
+
+  // It survives a reload, which is what makes it a demo rather than a mock.
+  await page.reload({ waitUntil: 'networkidle' });
+  if (w < 1024) await page.click('button:has-text("Bookings")');
+  await page.locator('button:visible', { hasText: 'Chat' }).first().click();
+  await page.waitForSelector('text=Sample Guest (Hannah W.)', { timeout: 15000 });
+  const after = await page.locator('button:visible', { hasText: 'Hannah' }).innerText();
+  ok(after.includes('You:'), `${w}: the reply did not survive a reload`);
+  ok(!/\b1\b/.test(after.replace(/\d{1,2}:\d{2}/g, '')), `${w}: answering did not clear the unread count`);
+
   ok(errs.length === 0, `${w}: page errors ${errs.join(' | ')}`);
-  await page.screenshot({ path: `shots/dash-${w}.png`, fullPage: false });
+  await page.screenshot({ path: `${process.env.SP}/dash-${w}.png`, fullPage: false });
   await ctx.close();
 }
 

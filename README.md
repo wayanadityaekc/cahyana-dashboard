@@ -18,6 +18,9 @@ The demo is filled with sample bookings and never touches the production API.
   never finished, or money that arrived at the wrong amount. Each one carries the reason.
 - **Prices.** Type a new rupiah price, save, and the next guest is quoted it. No deploy, no
   redeploy of the public site, and a one-tap reset back to the number that shipped.
+- **Chat.** The support panel on the public site answers most questions from the price list by
+  itself; a conversation only reaches here when a guest asked for a person. Threads waiting on
+  a reply carry a count, and answering one clears it.
 
 ## How it is built
 
@@ -108,12 +111,13 @@ no open door.
 
 ## Verifying it
 
-`verify-dash2.mjs` drives a real browser against a real build at 390, 768 and 1280:
+`verify-dash2.mjs` drives a real browser against a real build at 390, 768 and 1280 (71 assertions):
 the redirect for a signed-out visitor, both data routes answering **401 with no data** to a
 caller with no cookie, the design tokens resolving to the site's values *as the page resolves
 them* (not as numbers typed into the test), the rail at 248px on desktop and absent on a
 phone, no sideways overflow, the demo banner, a reachable Sign out, the price panel loading,
-and the login rate limit actually biting.
+the login rate limit actually biting, and the chat: two threads, an unread count on the one
+waiting, a reply appearing immediately and still being there after a reload.
 
 Each check was confirmed by **putting the bug back**: removing the token import (9 failures),
 serving bookings without a session (6), and removing the login limiter (1).
