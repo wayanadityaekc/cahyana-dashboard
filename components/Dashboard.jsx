@@ -9,6 +9,7 @@ import { RAIL_PAGE } from '@/components/ui/railClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
 import BookingCard from '@/components/admin/BookingCard';
+import StatCards from '@/components/admin/StatCards';
 import PricesPanel from '@/components/admin/PricesPanel';
 import PromoPanel from '@/components/admin/PromoPanel';
 import ContentPanel from '@/components/admin/ContentPanel';
@@ -163,6 +164,10 @@ export default function Dashboard({ demo = false }) {
         reading={reading}
         onBack={() => setReading(false)}
       >
+        {/* The numbers sit above the controls, not inside them: they are what
+            the page is telling you, and the search box is how you dig. Only on
+            the booking buckets - prices, content and chat are not bookings. */}
+        {isBookings && <StatCards data={data} />}
         <div className={TOOLS}>
           {isBookings && (
             <>
