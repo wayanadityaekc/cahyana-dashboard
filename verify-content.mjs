@@ -218,5 +218,80 @@ for (const w of [390, 1280]) {
   await ctx.close();
 }
 
+// ---- the other six tabs ----------------------------------------------------
+// They share ONE renderer driven by the allowlist the server sends, so what is
+// under test is that the rule arrives and is obeyed - not six layouts.
+{
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, storageState: SESSION });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  await page.locator('button:visible', { hasText: 'Content' }).first().click({ timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(700);
+
+  const TABS = ['Legal', 'Tours', 'Experiences', 'Destinations', 'Guides', 'Charter', 'Transfer', 'Airport'];
+  for (const t of TABS) {
+    ok(await page.getByRole('button', { name: t, exact: true }).first().isVisible().catch(() => false),
+       'tab missing: ' + t);
+  }
+
+  // What must NEVER be offered, on any tab. Each of these is a key, not a word:
+  // bookItem and priceName are pricing catalog keys, priceFallback is a price,
+  // dur is an API tier key, and title is the short name the breadcrumb, the
+  // listing card, the review key and the JSON-LD all read.
+  const FORBIDDEN = ['bookItem', 'priceName', 'priceFallback', '.dur', '.key', '.img', 'refId', 'ogImage', '.type'];
+
+  for (const t of ['Experiences', 'Destinations', 'Guides', 'Charter', 'Transfer', 'Airport']) {
+    await page.getByRole('button', { name: t, exact: true }).first().click();
+    await page.waitForTimeout(600);
+
+    const boxes = await page.locator('[data-gfield]').count();
+    ok(boxes > 0, t + ': the tab opened with no editable fields at all');
+
+    const paths = await page.locator('[data-gfield]').evaluateAll((els) => els.map((e) => e.getAttribute('data-gfield')));
+    const bad = paths.filter((p) => FORBIDDEN.some((f) => p.includes(f)));
+    ok(bad.length === 0, t + ': offered a locked key as an editable box -> ' + bad.join(', '));
+
+    // Typing has to register as a change, or Publish stays disabled and the tab
+    // is decorative.
+    const first = page.locator('[data-gfield]').first();
+    // A missing element must FAIL an assertion, not throw - a throw here kills
+    // the run and every later assertion reports nothing at all.
+    const was = await first.inputValue().catch(() => null);
+    if (was === null) { ok(false, t + ': no field to type into'); continue; }
+    await first.fill(was + ' x');
+    await page.waitForTimeout(400);
+    const count = (await page.locator('[data-count]').innerText().catch(() => '')) || '';
+    ok(/unpublished change/.test(count), t + ': an edit was not counted (' + count + ')');
+    await first.fill(was);
+    await page.waitForTimeout(300);
+  }
+
+  // A single-object page has no page picker; a map of pages does.
+  await page.getByRole('button', { name: 'Charter', exact: true }).first().click();
+  await page.waitForTimeout(600);
+  ok(await page.locator('[data-pagepick]').count() === 0 && await page.locator('[data-page]').count() === 0,
+     'charter is one page but offered a page picker');
+  await page.getByRole('button', { name: 'Experiences', exact: true }).first().click();
+  await page.waitForTimeout(600);
+  ok((await page.locator('[data-pagepick]').count()) + (await page.locator('[data-page]').count()) > 0,
+     'experiences is a map of pages but offered no way to pick one');
+
+  // The include/exclude lists still grow and shrink on the new tabs.
+  await page.getByRole('button', { name: 'Transfer', exact: true }).first().click();
+  await page.waitForTimeout(600);
+  const before = await page.locator('[data-line^="included-"]').count();
+  await page.locator('[data-add="included"]').first().click();
+  await page.waitForTimeout(400);
+  const after = await page.locator('[data-line^="included-"]').count();
+  ok(after === before + 1, 'transfer: Add a line did not add one (' + before + ' -> ' + after + ')');
+
+  ok(errs.length === 0, 'new tabs: page errors ' + errs.join(' | '));
+  await page.close();
+  await ctx.close();
+}
+
 await b.close();
 console.log(`${pass}/${pass + fail}`);

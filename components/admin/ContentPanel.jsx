@@ -27,9 +27,52 @@ import { getJson, postJson, Unauthorized } from '@/lib/api';
 // change counting) is shared, because THAT part must not drift.
 
 const KINDS = [
-  { id: 'legal', label: 'Legal pages' },
-  { id: 'tours', label: 'Tour details' },
+  { id: 'legal', label: 'Legal' },
+  { id: 'tours', label: 'Tours' },
+  { id: 'experiences', label: 'Experiences' },
+  { id: 'destinations', label: 'Destinations' },
+  { id: 'guides', label: 'Guides' },
+  { id: 'charter', label: 'Charter' },
+  { id: 'transfer', label: 'Transfer' },
+  { id: 'airport', label: 'Airport' },
 ];
+
+// Charter, transfer and airport are ONE page each, not a map of pages, so they
+// have no page picker and their field paths have no page key in front.
+const SINGLE = new Set(['charter', 'transfer', 'airport']);
+
+// Same normalisation cahyana-api/content.js does, and it has to stay the same:
+// this decides which boxes appear, that decides which writes are accepted, and
+// a disagreement shows up as a field the owner can type into and cannot save.
+function fieldPathOf(at, single) {
+  const clean = at.replace(/\[\d+\]/g, '');
+  if (single) return clean;
+  const i = clean.indexOf('.');
+  return i === -1 ? clean : clean.slice(i + 1);
+}
+
+// "tinfo.included" -> "Included", "routes.name" -> "Name", "metaDesc" -> "Google
+// description". The few that deserve a real sentence get one; the rest are
+// humanised from the key, which reads well because the keys were named for
+// people in the first place.
+const NICE = {
+  metaDesc: 'Google description (110-170 characters)',
+  metaTitle: 'Google title (up to 65 characters)',
+  heading: 'Page heading (the big one)',
+  desc: 'Line under the title (25-40 words)',
+  sub: 'Line under the title (25-40 words)',
+  descHtml: 'Story',
+  html: 'Paragraph',
+  boxTitle: 'Form heading',
+  routesNote: 'Note under the routes',
+  routesTitle: 'Routes heading',
+  stopsTitle: 'Section heading',
+  cta: 'Button label',
+};
+function labelFor(key) {
+  if (NICE[key]) return NICE[key];
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
+}
 
 // Must match EDITABLE.tours.lists in cahyana-api/content.js. Mirrored here only
 // so the buttons can grey out instead of the server refusing after the fact; the
@@ -77,7 +120,7 @@ export default function ContentPanel({ onExpired }) {
       const j = await getJson(`/api/content?kind=${kind}`);
       setData(j);
       setDoc(j.draft || j.live);
-      setPage(Object.keys(j.live || {})[0] || '');
+      setPage(j.single ? '' : Object.keys(j.live || {})[0] || '');
     } catch (e) {
       if (e instanceof Unauthorized) return onExpired();
       setErr(e.message || 'Could not load the content.');
@@ -157,9 +200,15 @@ export default function ContentPanel({ onExpired }) {
 
   if (!data || !doc) return <div className={WRAP}>{kindTabs}<p className={NOTE}>{err || 'Loading...'}</p></div>;
 
-  const pages = Object.keys(data.live);
-  const cur = doc[page];
+  const single = SINGLE.has(kind);
+  const pages = single ? [] : Object.keys(data.live);
+  const cur = single ? doc : doc[page];
   const isChanged = (at) => changed.some((c) => c === at);
+
+  // "atv-ride.stops[0].name" -> ['atv-ride','stops',0,'name'], which is what
+  // set() walks. Numbers stay numbers or the array index becomes a key.
+  const toPath = (at) => (at.match(/[^.[\]]+/g) || []).map((v) => (/^\d+$/.test(v) ? Number(v) : v));
+  const valueAt = (at) => toPath(at).reduce((n, k) => (n == null ? n : n[k]), doc);
 
   const field = (key, label, area = false, rows = 2) => {
     const at = `${page}.${key}`;
@@ -225,6 +274,127 @@ export default function ContentPanel({ onExpired }) {
     );
   };
 
+  // ONE renderer for the six kinds that do not have a hand-made one, driven by
+  // the allowlist THE SERVER SENT. Legal and tours keep their own because they
+  // read better hand-arranged; everything else would need six more renderers
+  // that could each drift from the rule that actually decides what saves.
+  //
+  // So the rule here is: if the server says a field is editable, a box appears;
+  // if it does not, nothing appears. A field can never be typed into and then
+  // refused, and a new editable field needs no change in this file.
+  const genericCards = () => {
+    const fields = data.fields || [];
+    const lists = data.lists || {};
+    const base = single ? '' : page;
+    const editable = (at) => fields.includes(fieldPathOf(at, single));
+    const leaves = [];
+
+    const walk = (node, at) => {
+      if (typeof node === 'string') {
+        if (editable(at)) leaves.push({ at, type: 'text' });
+        return;
+      }
+      if (Array.isArray(node)) {
+        const key = fieldPathOf(at, single).split('.').pop();
+        // A list the server lets grow, holding only lines of text, is rendered
+        // as ONE add/remove block rather than N boxes.
+        if (Object.prototype.hasOwnProperty.call(lists, key) && node.every((v) => typeof v === 'string') && editable(at + '[0]')) {
+          leaves.push({ at, type: 'list', key });
+          return;
+        }
+        node.forEach((v, i) => walk(v, at + '[' + i + ']'));
+        return;
+      }
+      if (node && typeof node === 'object') {
+        Object.keys(node).forEach((k) => walk(node[k], at ? at + '.' + k : k));
+      }
+    };
+    walk(cur, base);
+
+    // Grouped by the first part of the field path, so "routes" boxes sit
+    // together rather than being one long column of unrelated fields.
+    const order = [];
+    const byGroup = {};
+    for (const leaf of leaves) {
+      const g = fieldPathOf(leaf.at, single).split('.')[0];
+      if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+      byGroup[g].push(leaf);
+    }
+    if (!order.length) return <p className={NOTE}>Nothing on this page can be edited from here.</p>;
+
+    const leafLabel = (at) => {
+      const parts = fieldPathOf(at, single).split('.');
+      const idx = (at.match(/\[(\d+)\]/g) || []).map((m) => Number(m.slice(1, -1)) + 1);
+      const n = idx.length ? idx.join('.') + '. ' : '';
+      return n + labelFor(parts[parts.length - 1]);
+    };
+
+    const textBox = (at) => (
+      <span key={at}>
+        <label className={FIELD_LABEL} htmlFor={'g-' + at}>{leafLabel(at)}</label>
+        <textarea
+          id={'g-' + at}
+          data-gfield={at}
+          className={FIELD_AREA + ' ' + (isChanged(at) ? CHANGED : '')}
+          rows={(valueAt(at) || '').length > 120 ? 4 : 2}
+          value={valueAt(at) ?? ''}
+          onChange={(e) => set(toPath(at), e.target.value)}
+        />
+      </span>
+    );
+
+    const listBox = (at, key) => {
+      const lines = valueAt(at) || [];
+      const replace = (next) => set(toPath(at), next);
+      return (
+        <span key={at}>
+          <p className={BLOCK_LABEL}>{labelFor(key)}</p>
+          {lines.map((line, i) => (
+            <span className={LINE} key={i}>
+              <textarea
+                className={FIELD_AREA + ' ' + (isChanged(at + '[' + i + ']') ? CHANGED : '')}
+                rows={2}
+                data-line={key + '-' + i}
+                value={line}
+                onChange={(e) => replace(lines.map((v, j) => (j === i ? e.target.value : v)))}
+              />
+              <button
+                type="button"
+                className={ICON_BTN}
+                data-remove={key + '-' + i}
+                aria-label={'Remove line ' + (i + 1)}
+                disabled={lines.length <= LIST_MIN}
+                onClick={() => replace(lines.filter((v, j) => j !== i))}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          <span className={ROW}>
+            <button
+              type="button"
+              className={GHOST}
+              data-add={key}
+              disabled={lines.length >= LIST_MAX}
+              onClick={() => replace([...lines, ''])}
+            >
+              <Plus aria-hidden="true" style={{ width: 14, height: 14, marginRight: 4 }} />
+              Add a line
+            </button>
+            <span className={NOTE}>{lines.length} lines, up to {LIST_MAX}.</span>
+          </span>
+        </span>
+      );
+    };
+
+    return order.map((g) => (
+      <div className={CARD} key={g} data-group={g}>
+        <p className={BLOCK_LABEL}>{labelFor(g)}</p>
+        {byGroup[g].map((leaf) => (leaf.type === 'list' ? listBox(leaf.at, leaf.key) : textBox(leaf.at)))}
+      </div>
+    ));
+  };
+
   return (
     <div className={WRAP}>
       {kindTabs}
@@ -287,7 +457,7 @@ export default function ContentPanel({ onExpired }) {
 
       {/* Three legal pages fit on a row of tabs; seventeen tours do not, and a
           row that wraps to four lines is worse than a list. */}
-      {pages.length > 6 ? (
+      {single ? null : pages.length > 6 ? (
         <span>
           <label className={FIELD_LABEL} htmlFor="c-page">Which page</label>
           <select
@@ -310,7 +480,7 @@ export default function ContentPanel({ onExpired }) {
         </div>
       )}
 
-      {!cur ? <p className={NOTE}>Nothing to edit.</p> : kind === 'tours' ? (
+      {!cur ? <p className={NOTE}>Nothing to edit.</p> : (kind !== 'legal' && kind !== 'tours') ? genericCards() : kind === 'tours' ? (
         <>
           <div className={CARD}>
             {/* The tour's NAME is not here on purpose: the breadcrumb, the

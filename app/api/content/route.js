@@ -12,7 +12,10 @@ function expired() {
   return res;
 }
 
-const KINDS = ['legal', 'tours'];
+// Must list every kind cahyana-api EDITABLE holds. It is a real guard - the kind
+// reaches a path allowlist upstream - but a stale copy shows as "Unknown content"
+// on a tab that works perfectly well one layer up.
+const KINDS = ['legal', 'tours', 'experiences', 'destinations', 'guides', 'charter', 'transfer', 'airport'];
 const kindOf = (req) => {
   const k = new URL(req.url).searchParams.get('kind') || 'legal';
   return KINDS.includes(k) ? k : null;
