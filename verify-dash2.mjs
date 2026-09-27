@@ -127,7 +127,11 @@ for (const w of [390, 768, 1280]) {
   ok(!/\b1\b/.test(after.replace(/\d{1,2}:\d{2}/g, '')), `${w}: answering did not clear the unread count`);
 
   ok(errs.length === 0, `${w}: page errors ${errs.join(' | ')}`);
-  await page.screenshot({ path: `${process.env.SP}/dash-${w}.png`, fullPage: false });
+  // Falls back to shots/ (already gitignored) when SP is unset. Interpolating an
+  // undefined env var straight into the path writes a directory literally named
+  // "undefined" into the repo root, which then shows up as untracked work - it
+  // happened, and the screenshots are not work, they are output.
+  await page.screenshot({ path: `${process.env.SP || 'shots'}/dash-${w}.png`, fullPage: false });
   await ctx.close();
 }
 
