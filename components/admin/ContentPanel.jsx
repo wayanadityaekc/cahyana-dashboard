@@ -243,17 +243,41 @@ export default function ContentPanel({ onExpired }) {
         </p>
       )}
 
+      {data.deploys === false && (
+        <p className={INFO} data-draftbranch>
+          <AlertTriangle aria-hidden="true" />
+          <span>
+            Publishing saves to <strong>{data.branch}</strong>, not to the live site.
+            Nothing reaches the site until you review and merge it.
+            {data.compareUrl && (
+              <>
+                {' '}
+                <a href={data.compareUrl} target="_blank" rel="noopener" className="text-gold" data-compare>
+                  review the changes <ExternalLink aria-hidden="true" style={{ display: 'inline', width: 12, height: 12 }} />
+                </a>
+              </>
+            )}
+          </span>
+        </p>
+      )}
+
       {data.build && (
         <p className={INFO}>
           {data.build.state === 'success' ? <CheckCircle2 aria-hidden="true" /> : <AlertTriangle aria-hidden="true" />}
           <span>
-            Last publish: <strong>{data.build.state}</strong>
-            {data.build.state === 'success' ? ' - the site has it.' : ' - the site is still on the previous text.'}
+            {data.build.state === 'awaiting-merge' ? (
+              <>Last publish: <strong>saved to the draft branch</strong> - waiting for you to merge it.</>
+            ) : (
+              <>
+                Last publish: <strong>{data.build.state}</strong>
+                {data.build.state === 'success' ? ' - the site has it.' : ' - the site is still on the previous text.'}
+              </>
+            )}
             {data.build.url && (
               <>
                 {' '}
                 <a href={data.build.url} target="_blank" rel="noopener" className="text-gold">
-                  build log <ExternalLink aria-hidden="true" style={{ display: 'inline', width: 12, height: 12 }} />
+                  {data.build.state === 'awaiting-merge' ? 'review the diff' : 'build log'} <ExternalLink aria-hidden="true" style={{ display: 'inline', width: 12, height: 12 }} />
                 </a>
               </>
             )}
@@ -401,7 +425,12 @@ export default function ContentPanel({ onExpired }) {
           data-publish
           onClick={async () => {
             if (!(await send('draft', doc))) return;
-            if (await send('publish')) { setSaved('Publishing. The site rebuilds in about three minutes.'); load(); }
+            if (await send('publish')) {
+              setSaved(data.deploys === false
+                ? `Saved to ${data.branch}. Review and merge it to put it on the site.`
+                : 'Publishing. The site rebuilds in about three minutes.');
+              load();
+            }
           }}
         >
           Publish{changed.length ? ` (${changed.length})` : ''}
