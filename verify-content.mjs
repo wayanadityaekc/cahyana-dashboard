@@ -191,5 +191,32 @@ for (const w of [390, 1280]) {
   await ctx.close();
 }
 
+// ---- a failure says WHY, not just a number --------------------------------
+// The API answers 502 with GitHub's own sentence in detail. Throwing only the
+// status threw that away, and the first real deploy showed "Server answered
+// 502." with nothing to act on - the cause was in the body all along.
+{
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, storageState: SESSION });
+  const page = await ctx.newPage();
+  await page.route("**/api/content**", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    return route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({ status: "error", detail: "Bad credentials" }),
+    });
+  });
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  await page.locator("button:visible", { hasText: "Content" }).first().click({ timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(900);
+
+  const txt = (await page.locator("body").innerText().catch(() => "")) || "";
+  ok(/Bad credentials/i.test(txt), "error detail: the reason the API gave is not shown");
+  ok(/502/.test(txt), "error detail: the status code is gone too - the guide diagnoses by number");
+  await page.close();
+  await ctx.close();
+}
+
 await b.close();
 console.log(`${pass}/${pass + fail}`);
