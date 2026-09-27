@@ -46,10 +46,15 @@ for (const w of [390, 1280]) {
   const cards = () => page.locator('[data-review]').count();
   ok((await cards()) === 4, `${tag}: expected 4 reviews, found ${await cards()}`);
 
-  // Stars must match the rating, not just be present - a row of five filled
-  // stars on a 1-star review is worse than no stars at all.
-  const oneStar = page.locator('[data-review="101"] [data-stars]');
-  ok((await oneStar.getAttribute('data-stars')) === '1', `${tag}: the 1-star review is not drawn as 1 star`);
+  // Stars must match the rating. Reading data-stars was NOT a test - that
+  // attribute is the number the component was handed, so it agreed with itself
+  // while every star was drawn filled. Count the FILLED ones instead.
+  const filled = async (id) => page.locator(`[data-review="${id}"] [data-stars] svg[fill="currentColor"]`).count();
+  const total = async (id) => page.locator(`[data-review="${id}"] [data-stars] svg`).count();
+  ok((await total(101)) === 5, `${tag}: a rating row does not have 5 stars (got ${await total(101)})`);
+  ok((await filled(101)) === 1, `${tag}: the 1-star review draws ${await filled(101)} filled stars`);
+  ok((await filled(102)) === 5, `${tag}: the 5-star review draws ${await filled(102)} filled stars`);
+  ok((await filled(103)) === 4, `${tag}: the 4-star review draws ${await filled(103)} filled stars`);
 
   // The already-hidden one is marked, and offers to come back rather than to hide.
   ok((await page.locator('[data-review="104"]').getAttribute('data-status')) === 'hidden',
