@@ -150,5 +150,46 @@ for (const w of [390, 1280]) {
   await ctx.close();
 }
 
+// ---- publishing to a draft branch says so ----------------------------------
+// The API response is rewritten on the way in rather than adding a second demo
+// fixture: what needs proving is that the PANEL reacts to deploys:false, and the
+// shape it reacts to is the real one.
+{
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 900 }, storageState: SESSION });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(String(e)));
+  await page.route('**/api/content**', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const res = await route.fetch();
+    let j;
+    try { j = await res.json(); } catch { return route.fulfill({ response: res }); }
+    j.deploys = false;
+    j.branch = 'content-draft';
+    j.compareUrl = 'https://github.com/wayanadityaekc/CUE/compare/main...content-draft?expand=1';
+    j.build = { state: 'awaiting-merge', url: j.compareUrl };
+    return route.fulfill({ response: res, body: JSON.stringify(j) });
+  });
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(600);
+  await page.locator('button:visible', { hasText: 'Content' }).first().click({ timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(900);
+
+  const txt = (await page.locator('body').innerText().catch(() => '')) || '';
+  ok(/Nothing reaches the site until you review and merge it/i.test(txt),
+     'draft branch: the panel does not say the publish is not live');
+  ok(txt.includes('content-draft'), 'draft branch: the branch name is not shown');
+  ok(await page.locator('[data-compare]').isVisible().catch(() => false),
+     'draft branch: no link to review the diff');
+  ok(/waiting for you to merge/i.test(txt),
+     'draft branch: the build line still talks about a build that never happens');
+  // The old copy promised a rebuild; off the deploy branch that would be a lie.
+  ok(!/rebuilds in about three minutes/i.test(txt),
+     'draft branch: it still promises the site rebuilds by itself');
+  ok(errs.length === 0, `draft branch: page errors ${errs.join(' | ')}`);
+  await page.close();
+  await ctx.close();
+}
+
 await b.close();
 console.log(`${pass}/${pass + fail}`);
