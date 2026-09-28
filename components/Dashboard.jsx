@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle , Star } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
-import { RAIL_PAGE } from '@/components/ui/railClasses';
+import { RAIL_PAGE_SCROLL } from '@/components/ui/railClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
 import BookingCard from '@/components/admin/BookingCard';
@@ -49,6 +49,13 @@ const SECTIONS = [
   { id: 'chat', label: 'Chat', Icon: MessageCircle },
 ];
 const BOOKING_TABS = ['attention', 'upcoming', 'past', 'undated'];
+
+// Single-item leaf, same shape as the public site's Account Settings ("Home >
+// Settings" reduced to its own leaf) - this app has one page, so there is no
+// separate "Home" to link back to. It always reads the same regardless of
+// which section is open, matching how the public site's own header
+// breadcrumb never names the active tab either.
+const CRUMB = [{ label: 'Dashboard' }];
 
 const H1 = 'font-head font-medium tracking-[-0.01em] text-display text-green m-0 mb-[0.3rem]';
 const SUB = 'font-body text-body text-muted m-0 mb-[var(--space-3)]';
@@ -126,36 +133,7 @@ export default function Dashboard({ demo = false }) {
   }));
 
   return (
-    <div className={RAIL_PAGE}>
-      <h1 className={H1}>Dashboard</h1>
-      <p className={SUB}>
-        {isBookings
-          ? `Bookings as they stand${data?.today ? ` - today in Bali is ${data.today}` : ''}.`
-          : isChat
-            ? 'Guests the chat on the site could not answer by itself.'
-            : isPromo
-              ? 'One percentage off every program, with a last day. Programs only.'
-              : isContent
-                ? 'The words on the site. Publishing rebuilds it - about three minutes.'
-                : isReviews
-                  ? 'What guests wrote after their trip. You can take one down; nothing is deleted.'
-                  : 'Change a price here and it applies straight away, no deploy.'}
-      </p>
-
-      {/* Said once, at the top, on every section: nobody should mistake a
-          sample booking for a real guest, or a demo price edit for a live one. */}
-      {demo && (
-        <p className={BANNER}>
-          <AlertTriangle strokeWidth={1.7} aria-hidden="true" />
-          <span>
-            <strong>Demo data.</strong> These bookings and chats are made up and
-            nothing here reaches the live system. Price edits and chat replies are
-            real edits held in your own browser session - refresh and they stay,
-            sign out and they are gone.
-          </span>
-        </p>
-      )}
-
+    <div className={RAIL_PAGE_SCROLL}>
       <RailLayout
         label="Bookings"
         items={items}
@@ -163,7 +141,43 @@ export default function Dashboard({ demo = false }) {
         onSelect={(id) => { setTab(id); setReading(true); }}
         reading={reading}
         onBack={() => setReading(false)}
+        collapsible
+        breadcrumb={CRUMB}
+        scrollContent
       >
+        {/* Moved inside RailLayout's own content column (Sep 2026, "100% this
+            layout") - same place the public site's own page heading lives,
+            below the header's collapse-trigger + breadcrumb row, above the
+            active section's content. */}
+        <h1 className={H1}>Dashboard</h1>
+        <p className={SUB}>
+          {isBookings
+            ? `Bookings as they stand${data?.today ? ` - today in Bali is ${data.today}` : ''}.`
+            : isChat
+              ? 'Guests the chat on the site could not answer by itself.'
+              : isPromo
+                ? 'One percentage off every program, with a last day. Programs only.'
+                : isContent
+                  ? 'The words on the site. Publishing rebuilds it - about three minutes.'
+                  : isReviews
+                    ? 'What guests wrote after their trip. You can take one down; nothing is deleted.'
+                    : 'Change a price here and it applies straight away, no deploy.'}
+        </p>
+
+        {/* Said once, at the top, on every section: nobody should mistake a
+            sample booking for a real guest, or a demo price edit for a live one. */}
+        {demo && (
+          <p className={BANNER}>
+            <AlertTriangle strokeWidth={1.7} aria-hidden="true" />
+            <span>
+              <strong>Demo data.</strong> These bookings and chats are made up and
+              nothing here reaches the live system. Price edits and chat replies are
+              real edits held in your own browser session - refresh and they stay,
+              sign out and they are gone.
+            </span>
+          </p>
+        )}
+
         {/* The numbers sit above the controls, not inside them: they are what
             the page is telling you, and the search box is how you dig. Only on
             the booking buckets - prices, content and chat are not bookings. */}
