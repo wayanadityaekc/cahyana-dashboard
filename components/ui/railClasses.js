@@ -38,6 +38,13 @@ export const RAIL_PAGE_BOX = `${PAGE_WIDE} pb-[var(--space-5)]`;
 
 export const RAIL_PAGE = `${RAIL_PAGE_BOX} pt-[calc(var(--header-h-max,104px)+1.9rem)]`;
 
+// Tighter margin, scrollContent pages only (Sep 2026, "100% this layout" -
+// ported from the public site's My Trips/Settings/Our Company, which use this
+// exact same 24px/24px split instead of RAIL_PAGE's own numbers). No
+// `--header-h-max` term: this app has no fixed navbar at all, so there is
+// nothing above the frame to clear - the top gap is purely --space-3.
+export const RAIL_PAGE_SCROLL = `${PAGE_WIDE} pb-[var(--space-3)] pt-[var(--space-3)]`;
+
 // overflow-CLIP, not overflow-hidden. Both clip the rail's cream to the rounded
 // corner, but `hidden` also makes the frame a scroll container, and a sticky child
 // sticks to its nearest scrolling ancestor - so the menu would scroll away with
@@ -65,32 +72,85 @@ export const RAIL_FRAME =
 // half is the same string, so the two pages cannot drift apart.
 export const RAIL_FRAME_CARD = `${FRAME_DESK} max-[992px]:rounded-md max-[992px]:shadow-none`;
 
+// Capped, not just a minimum (Sep 2026, "100% this layout" - ported from the
+// public site's My Trips/Settings/Our Company: "focus on bottom border of the
+// container wrapper, I want that container shows at the screen"). `h-`
+// instead of `min-h-` so the frame never grows past the first screen and its
+// own bottom border never scrolls out of view.
+//
+// A SEPARATE constant from FRAME_DESK, not a change to it, same reasoning as
+// the public site: this app has no long-form page that needs the frame to
+// keep growing.
+//
+// No `--header-h-max` or fixed-footer subtraction in the calc (unlike the
+// public site's version): this app has no navbar and no fixed footer on
+// desktop (AppBottomNav is phone-only, `standalone:max-[993px]`, well below
+// where this rule applies) - the only two things taking vertical space above
+// and below the frame are RAIL_PAGE_SCROLL's own top/bottom padding, so those
+// are the only two terms subtracted.
+export const RAIL_FRAME_SCROLL =
+  'flex items-stretch bg-white [border:1px_solid_var(--line)] rounded-[var(--r-lg)] ' +
+  'min-[993px]:h-[calc(100dvh_-_var(--space-3)_-_var(--space-3))] ' +
+  'overflow-clip [box-shadow:var(--shadow-md)] max-[992px]:block';
+
 // --- desktop rail -----------------------------------------------------------
 export const RAIL_ASIDE =
-  'max-[992px]:hidden flex-none w-[248px] bg-cream [border-right:1px_solid_var(--line)]';
+  'max-[992px]:hidden flex-none w-[248px] bg-cream [border-right:1px_solid_var(--line)] ' +
+  'transition-[width] duration-200 ease-[ease]';
 
-// Sticks to the bottom of the live header, so it keeps its place while the
-// content column scrolls. --header-h (live) not --header-h-max: the frozen one
-// would leave a gap under the navbar once the trip bar closes.
+// Collapsed rail (Sep 2026, "100% this layout" - ported from the public
+// site's "make it like shadcn's sidebar-08"). 64px, same base string as
+// RAIL_ASIDE otherwise - only the width differs, so a collapsed rail never
+// drifts from the expanded one in anything but that one number.
+export const RAIL_ASIDE_COLLAPSED =
+  'max-[992px]:hidden flex-none w-[64px] bg-cream [border-right:1px_solid_var(--line)] ' +
+  'transition-[width] duration-200 ease-[ease]';
+
+// top-0, not top-[header-h] (unlike the public site's version): this app has
+// no fixed navbar for the rail to clear.
 export const RAIL_STICK =
-  'sticky top-[var(--header-h,104px)] flex flex-col p-[1.35rem_0.9rem] ' +
-  'max-h-[calc(100vh-var(--header-h,104px))] overflow-y-auto';
+  'sticky top-0 flex flex-col p-[1.35rem_0.9rem] max-h-[100dvh] overflow-y-auto';
+
+// Collapsed: no side padding (a 64px column has no room to spare) - the icon
+// centers itself instead.
+export const RAIL_STICK_COLLAPSED =
+  'sticky top-0 flex flex-col items-center p-[1.35rem_0.5rem] max-h-[100dvh] overflow-y-auto';
 
 export const RAIL_LABEL =
   'font-body text-label font-medium tracking-[0.14em] uppercase text-muted m-0 mb-[var(--space-2)] px-[0.75rem]';
 
 // One row of the rail. The active row is a raised white pill - the rail is
 // already cream, so "lifted out of the tint" is what reads as selected here.
-export const railItem = (active) =>
-  'flex items-center gap-[0.65rem] w-full text-left p-[0.55rem_0.75rem] rounded-[var(--r-md)] ' +
-  'bg-transparent border-none cursor-pointer font-body text-body leading-[1.35] ' +
+// `collapsed` centers the icon and drops the row to a square instead of a
+// full-width bar - the label stays in the DOM (title/aria-label carry it for
+// a hover tooltip and screen readers), just not painted.
+export const railItem = (active, collapsed = false) =>
+  `flex items-center ${collapsed ? 'justify-center w-9 h-9 p-0' : 'w-full text-left p-[0.55rem_0.75rem] gap-[0.65rem]'} ` +
+  'rounded-[var(--r-md)] bg-transparent border-none cursor-pointer font-body text-body leading-[1.35] ' +
   '[&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)] [&>svg]:shrink-0 ' +
   (active
-    ? 'font-semibold text-gold bg-white [border:1px_solid_var(--line)] [box-shadow:var(--shadow-sm)] p-[calc(0.55rem-1px)_calc(0.75rem-1px)]'
+    ? `font-semibold text-gold bg-white [border:1px_solid_var(--line)] [box-shadow:var(--shadow-sm)] ${collapsed ? '' : 'p-[calc(0.55rem-1px)_calc(0.75rem-1px)]'}`
     : 'text-muted [&>svg]:opacity-75 hover:text-gold');
 
-// Splits "about us" from "the legal small print" - two different reasons to be
-// on this page, so they should not read as one run of six.
+// --- header row: collapse trigger + breadcrumb (Sep 2026) -------------------
+// Desktop only, same as the rest of the rail chrome - mobile never had a
+// sidebar to collapse. Sits above `children` inside <main>, same place the
+// public site's own header row lives.
+export const RAIL_HEADER =
+  'max-[992px]:hidden flex items-center gap-3 pb-4 mb-[1.2rem] [border-bottom:1px_solid_var(--line)]';
+export const RAIL_TRIGGER =
+  'flex items-center justify-center w-8 h-8 -ml-1 rounded-[var(--r-md)] bg-transparent border-none cursor-pointer ' +
+  'text-muted hover:bg-white hover:text-gold [&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)]';
+export const RAIL_HEADER_SEP = 'w-px h-4 bg-line shrink-0';
+// Only needed in scroll mode: normally the header sits inside <main>, which
+// carries its own padding (RAIL_MAIN) and pushes every child in from the
+// edge for free. Scroll mode moves that padding OFF <main> and onto the
+// header + the scrolling body individually (RAIL_MAIN_SCROLL/RAIL_SCROLL_BODY
+// below), so the header has to bring its own horizontal inset here instead.
+export const RAIL_HEADER_PAD = 'min-[993px]:px-[2.1rem] min-[993px]:pt-[1.6rem]';
+
+// Splits one group of rail items from the next - the booking buckets from
+// Prices, and Prices from the rest (this rail carries two of these).
 export const RAIL_SPLIT = 'block h-px bg-line my-[var(--space-2)] mx-[0.75rem]';
 
 // --- content column ---------------------------------------------------------
@@ -100,6 +160,23 @@ export const RAIL_MAIN = 'flex-1 min-w-0 p-[1.6rem_2.1rem] max-[992px]:p-0';
 export const RAIL_MAIN_CARD =
   'flex-1 min-w-0 p-[1.6rem_2.1rem] max-[992px]:px-6 max-[992px]:pt-6 max-[992px]:pb-8 ' +
   'max-[560px]:px-4 max-[560px]:pt-5 max-[560px]:pb-[1.6rem]';
+
+// --- scroll mode (Sep 2026, "100% this layout") ------------------------------
+// <main> itself carries NO padding here (that moved to the header and the
+// body wrapper below) and becomes a flex column that is not allowed to grow
+// past its parent frame (`overflow-hidden` + `min-h-0`) - the frame is what
+// is actually capped (RAIL_FRAME_SCROLL), this just stops <main> from
+// silently re-introducing the overflow the frame was capped to prevent.
+export const RAIL_MAIN_SCROLL =
+  'flex-1 min-w-0 min-[993px]:flex min-[993px]:flex-col min-[993px]:min-h-0 ' +
+  'min-[993px]:overflow-hidden max-[992px]:p-0';
+// The part that actually scrolls. `min-h-0` on a flex child is REQUIRED for
+// overflow-y-auto to ever kick in - without it, a flex item defaults to a
+// minimum height of its content's natural size, so it just grows the parent
+// instead of scrolling.
+export const RAIL_SCROLL_BODY =
+  'min-[993px]:flex-1 min-[993px]:min-h-0 min-[993px]:overflow-y-auto ' +
+  'min-[993px]:px-[2.1rem] min-[993px]:pb-[1.6rem]';
 
 // Prose is capped for line length but sits flush left, the same compromise the
 // guide articles make: the left edge lines up with everything else on the page,
