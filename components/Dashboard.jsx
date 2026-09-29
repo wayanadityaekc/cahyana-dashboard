@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle , Star } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle, Star, Search } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import { RAIL_PAGE_SCROLL } from '@/components/ui/railClasses';
@@ -15,6 +15,7 @@ import PromoPanel from '@/components/admin/PromoPanel';
 import ContentPanel from '@/components/admin/ContentPanel';
 import ReviewsPanel from '@/components/admin/ReviewsPanel';
 import ChatPanel from '@/components/admin/ChatPanel';
+import SearchPanel from '@/components/admin/SearchPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
 // The owner's view of the bookings.
@@ -47,6 +48,9 @@ const SECTIONS = [
   // Guests the site's support panel could not answer. Its own job, like prices -
   // not a fifth way of looking at the bookings.
   { id: 'chat', label: 'Chat', Icon: MessageCircle },
+  // How people find the site on Google - read from Search Console. Split off:
+  // it is about the site, not about a booking, a price or a guest.
+  { id: 'search', label: 'Google Search', Icon: Search, split: true },
 ];
 const BOOKING_TABS = ['attention', 'upcoming', 'past', 'undated'];
 
@@ -118,6 +122,7 @@ export default function Dashboard({ demo = false }) {
   const isPromo = tab === 'promo';
   const isContent = tab === 'content';
   const isReviews = tab === 'reviews';
+  const isSearch = tab === 'search';
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -161,7 +166,9 @@ export default function Dashboard({ demo = false }) {
                   ? 'The words on the site. Publishing rebuilds it - about three minutes.'
                   : isReviews
                     ? 'What guests wrote after their trip. You can take one down; nothing is deleted.'
-                    : 'Change a price here and it applies straight away, no deploy.'}
+                    : isSearch
+                      ? 'How people find the site on Google, straight from Search Console.'
+                      : 'Change a price here and it applies straight away, no deploy.'}
         </p>
 
         {/* Said once, at the top, on every section: nobody should mistake a
@@ -216,10 +223,11 @@ export default function Dashboard({ demo = false }) {
         {isPromo && <PromoPanel onExpired={expired} />}
         {isContent && <ContentPanel onExpired={expired} />}
         {isReviews && <ReviewsPanel onExpired={expired} />}
+        {isSearch && <SearchPanel onExpired={expired} />}
         {/* The catch-all must exclude EVERY named section. Forget one and that
             tab silently renders the Prices panel instead - it happened when the
             Content section was added. */}
-        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && <PricesPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSearch && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}

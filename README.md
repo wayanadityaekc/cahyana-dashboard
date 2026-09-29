@@ -289,3 +289,22 @@ The second of those is the one worth keeping. The first version of the harness o
 that the login page's HTML contained no booking data — and a route that handed bookings to
 *anyone* passed it 53/53, because the login page never calls that route. An assertion that
 only proves the harness agrees with itself is not a test.
+
+## Google Search
+
+The **Google Search** section shows clicks, impressions, click rate and average
+position from Google Search Console, against the period before, with a daily chart
+(one measure at a time, picked by the tiles - one axis, never two), top searches, top
+pages, countries, devices and sitemaps.
+
+The data is fetched by cahyana-api (`GET /api/admin/gsc`, `gsc.js`) as a **service
+account** with read-only scope; this app only proxies it through `/api/search`, so
+neither the Google key nor the admin token ever reaches the browser. Setup lives in
+cahyana-api's CLAUDE.md ("GOOGLE SEARCH CONSOLE DI DASHBOARD"). Until it is set up, the
+section says which variable is missing instead of failing.
+
+The demo account gets a made-up, deterministic report (`demoSearch()` in
+`lib/demoData.js`) and never calls the API or Google.
+
+Check: `node verify-search.mjs` against `next start` with the demo enabled (34
+assertions at 390 and 1280).
