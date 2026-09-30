@@ -97,7 +97,7 @@ await signIn(page, USER, PASS, 'owner');
 ok(await untilTrue(page, () => new URL(location.href).pathname === '/', 15000), 'signing in did not reach the dashboard');
 
 // --- open the chat section ----------------------------------------------
-await page.locator('nav[aria-label] >> text=Chat').first().click();
+await page.locator('[data-nav-chat]').first().click(); // navbar chat icon (DASHBOARD BRIEF #2)
 ok(await seen(page.locator('[data-live]'), 8000), 'the chat column never rendered');
 ok(await untilTrue(page, () => document.querySelector('[data-live]')?.getAttribute('data-live') === '1', 12000),
   'the dashboard never got a live socket - the ticket exchange or the upgrade failed');
@@ -163,7 +163,7 @@ const dctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
 const dpage = await dctx.newPage();
 await signIn(dpage, 'demo', 'demo', 'demo');
 ok(await untilTrue(dpage, () => new URL(location.href).pathname === '/', 15000), 'the demo sign-in did not reach the dashboard');
-await dpage.locator('nav[aria-label] >> text=Chat').first().click();
+await dpage.locator('[data-nav-chat]').first().click(); // navbar chat icon (DASHBOARD BRIEF #2)
 ok(await seen(dpage.locator('[data-live]'), 8000), 'the demo chat column never rendered');
 await sleep(2500);
 ok(await attr(dpage.locator('[data-live]'), 'data-live') === '0', 'demo mode reported itself live - it has no API to be live with');

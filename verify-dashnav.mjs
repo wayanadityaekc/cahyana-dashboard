@@ -181,7 +181,7 @@ for (const w of [320, 390, 768, 1280]) {
         out: !!m.querySelector('[data-drawer-signout]'),
       };
     });
-    ok(content.rows.join() === 'attention,upcoming,past,undated,prices,promo,content,reviews', `${w}: drawer sections are ${content.rows.join()}`);
+    ok(content.rows.join() === 'attention,upcoming,past,undated,prices,promo,content,reviews,settings', `${w}: drawer sections are ${content.rows.join()}`);
     ok(!content.chatText, `${w}: the drawer mentions Chat`);
     ok(/^https:\/\/cahyanaubudexperience\.com/.test(content.site), `${w}: drawer live-site link is "${content.site}"`);
     ok(content.out, `${w}: drawer has no Sign out`);

@@ -301,3 +301,51 @@ public site's own build**, in the same browser at the same width (320, 390, 768,
 logo, hamburger box and bars, chat icon, drawer width and edge, row type and pills, close
 button, and the tab bar shell against CUE's real `.bookbar`. It needs CUE's `out/` served on
 port 4000 (`node tools/serve-out.js` in the CUE repo).
+
+## Settings + push notifications (DASHBOARD BRIEF #4/#5)
+
+**Settings** is a section like the others: last in the sidebar (desktop) and the
+drawer (phones), and a row in the navbar's account menu. Its icon is the Lucide
+**bell** - the same glyph the push notification itself shows (Wayan's call).
+
+- **Account**: who is signed in and when this session ends (`/api/account` ->
+  `/admin/me`), Sign out, and **sign out on all devices** (ends every admin
+  session - a lost phone). The password stays in Railway (`ADMIN_PASS`).
+- **Notifications**: one switch for "push on this device", one per event, and a
+  test button. Toggles are **per device** - the server keeps them next to that
+  device's subscription (cahyana-api `push.js`). Defaults: new booking, payment
+  needs attention and chat ON; new review and the stopped-at-payment digest OFF.
+  The browser is asked for permission only when the switch is flipped. On an
+  iPhone the switch stays off in a Safari tab: iOS only allows web push for the
+  Home Screen app. The demo account never gets push.
+- **The switch is the website's switch** (the return-trip toggle on /transfer),
+  measured against it.
+
+**How a push arrives**: cahyana-api sends it (Web Push, VAPID) next to the owner
+email it already sends; `public/sw.js` shows it with `/icons/bell-192.png`
+(badge `/icons/bell-badge-96.png`, both rendered from Lucide's Bell by
+`tools/make-bell-icons.js`); a tap opens `/?tab=<section>`, which the page reads
+once and then drops from the URL. The lock screen only ever shows a booking
+reference and a tour name.
+
+**Needs, on the API side**: the `claude/dashboard-push` branch of cahyana-api
+merged, and `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` set in
+Railway. Until then Settings says "Push is not set up on the server yet".
+
+`verify-settings.mjs` runs all of it against the real API server (its database
+in memory, its pushes written to a file): reachable from sidebar, drawer and
+account menu; the switch measured against the website's; turning push on
+subscribes the device in the API with the right defaults; each toggle reaches
+the API; a chat event is NOT sent while Chat is off and IS sent (with nothing
+about the guest in it) once it is on; the test button; the payload delivered
+to the real service worker shows the bell and opens the right section; blocked
+permission, an iPhone tab and the demo all keep the switch off and say why; and
+sign out on all devices ends a second device's session too.
+
+```bash
+node ../cahyana-api/tools/chat-dev-server.js                 # port 4599
+CAHYANA_API=http://127.0.0.1:4599/api npx next start -p 3101
+DEMO_ENABLED=true DEMO_USER=demo DEMO_PASS=demo npx next start -p 3100
+(cd ../CUE && node tools/serve-out.js)                       # port 4000
+node verify-settings.mjs
+```

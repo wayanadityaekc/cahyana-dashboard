@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star, Bell } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import Navbar from '@/components/Navbar';
@@ -16,6 +16,7 @@ import PromoPanel from '@/components/admin/PromoPanel';
 import ContentPanel from '@/components/admin/ContentPanel';
 import ReviewsPanel from '@/components/admin/ReviewsPanel';
 import ChatPanel from '@/components/admin/ChatPanel';
+import SettingsPanel from '@/components/admin/SettingsPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
 // The owner's view of the bookings.
@@ -48,7 +49,11 @@ const SECTIONS = [
   // Guests the site's support panel could not answer. Its own job, like prices -
   // not a fifth way of looking at the bookings.
   { id: 'chat', label: 'Chat', Icon: MessageCircle },
+  // Account + push (DASHBOARD BRIEF #4/#5). The bell is Wayan's pick (#5 Q1):
+  // the same glyph as the push notification itself.
+  { id: 'settings', label: 'Settings', Icon: Bell, split: true },
 ];
+const SECTION_IDS = new Set(SECTIONS.map((s) => s.id));
 const BOOKING_TABS = ['attention', 'upcoming', 'past', 'undated'];
 
 // Single-item leaf, same shape as the public site's Account Settings ("Home >
@@ -111,11 +116,20 @@ export default function Dashboard({ demo = false }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // A push notification opens /?tab=<section> (public/sw.js). Read after mount,
+  // then dropped from the URL so a reload does not keep jumping back to it.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    if (t && SECTION_IDS.has(t)) setTab(t);
+    if (t) window.history.replaceState(null, '', window.location.pathname);
+  }, []);
+
   const isBookings = BOOKING_TABS.includes(tab);
   const isChat = tab === 'chat';
   const isPromo = tab === 'promo';
   const isContent = tab === 'content';
   const isReviews = tab === 'reviews';
+  const isSettings = tab === 'settings';
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -145,6 +159,7 @@ export default function Dashboard({ demo = false }) {
       unread={unread || 0}
       onChat={() => setTab('chat')}
       onSignOut={signOut}
+      onSettings={() => setTab('settings')}
       demo={demo}
     />
     <div className={RAIL_PAGE_SCROLL}>
@@ -175,7 +190,9 @@ export default function Dashboard({ demo = false }) {
                   ? 'The words on the site. Publishing rebuilds it - about three minutes.'
                   : isReviews
                     ? 'What guests wrote after their trip. You can take one down; nothing is deleted.'
-                    : 'Change a price here and it applies straight away, no deploy.'}
+                    : isSettings
+                      ? 'Your account, and which notifications reach this device.'
+                      : 'Change a price here and it applies straight away, no deploy.'}
         </p>
 
         {/* Said once, at the top, on every section: nobody should mistake a
@@ -218,10 +235,11 @@ export default function Dashboard({ demo = false }) {
         {isPromo && <PromoPanel onExpired={expired} />}
         {isContent && <ContentPanel onExpired={expired} />}
         {isReviews && <ReviewsPanel onExpired={expired} />}
+        {isSettings && <SettingsPanel onExpired={expired} onSignOut={signOut} />}
         {/* The catch-all must exclude EVERY named section. Forget one and that
             tab silently renders the Prices panel instead - it happened when the
             Content section was added. */}
-        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && <PricesPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}

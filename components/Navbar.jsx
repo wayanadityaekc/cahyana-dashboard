@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { ChevronDown, ExternalLink, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
+import { Bell, ChevronDown, ExternalLink, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
 import { MENU_ROW_BOX } from '@/components/ui/railClasses';
 
 // The dashboard's header, ported from the public site's navbar (Sep 2026,
@@ -14,7 +14,7 @@ import { MENU_ROW_BOX } from '@/components/ui/railClasses';
 //    rail as it was (Wayan, brief #2 Q1), so the burger has nothing to open there.
 //  - The drawer holds the dashboard sections, a link to the live site and Sign
 //    out. Chat is NOT in it: it is its own icon in the bar (brief #1 point 2).
-//  - The account slot is the owner, not a guest: its menu is just Sign out.
+//  - The account slot is the owner, not a guest: its menu is Settings + Sign out.
 
 // Site gutter: 16px on phones, 20px on desktop. The site gets 16 from
 // --container-x, which this app does not narrow on phones, so it is spelled out.
@@ -51,7 +51,7 @@ const ACCT_ROW = `${MENU_ROW_BOX} text-small font-medium text-gold no-underline 
 
 export const SITE_URL = 'https://cahyanaubudexperience.com';
 
-function AccountSlot({ demo, onSignOut }) {
+function AccountSlot({ demo, onSignOut, onSettings }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef(null);
   const btnRef = useRef(null);
@@ -97,6 +97,11 @@ function AccountSlot({ demo, onSignOut }) {
           <span className="block text-small text-muted">Cahyana dashboard</span>
         </div>
         <span className="block h-px bg-line mb-1" aria-hidden="true" />
+        {/* Same place as the site's account menu puts "Settings" (brief #4). */}
+        <button type="button" className={ACCT_ROW} onClick={() => { setOpen(false); onSettings(); }} data-acct-settings>
+          <Bell strokeWidth={1.7} aria-hidden="true" />Settings
+        </button>
+        <span className="block h-px bg-line mt-1" aria-hidden="true" />
         <div className="pt-1">
           <button type="button" className={ACCT_ROW} onClick={() => { setOpen(false); onSignOut(); }}>
             <LogOut strokeWidth={1.7} aria-hidden="true" />Sign out
@@ -107,7 +112,7 @@ function AccountSlot({ demo, onSignOut }) {
   );
 }
 
-export default function Navbar({ sections, active, onPick, unread = 0, onChat, onSignOut, demo = false }) {
+export default function Navbar({ sections, active, onPick, unread = 0, onChat, onSignOut, onSettings, demo = false }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef(null);
   const navRef = useRef(null);
@@ -236,7 +241,7 @@ export default function Navbar({ sections, active, onPick, unread = 0, onChat, o
           </ul>
         </nav>
 
-        <AccountSlot demo={demo} onSignOut={onSignOut} />
+        <AccountSlot demo={demo} onSignOut={onSignOut} onSettings={onSettings} />
       </div>
 
       <div

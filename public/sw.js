@@ -6,7 +6,7 @@
 // So it caches NOTHING that came from the server. It exists because Chrome will
 // not offer "Add to Home Screen" without a fetch handler, and because a page
 // with no signal should say so.
-const VERSION = 'cahyana-dash-v1';
+const VERSION = 'cahyana-dash-v2';
 const ASSETS = `${VERSION}-assets`;
 const OFFLINE_URL = '/offline';   // a server-rendered route, not a static file - this app is not an export
 
@@ -47,4 +47,43 @@ self.addEventListener('fetch', (e) => {
       })),
     );
   }
+});
+
+// ---- Push (DASHBOARD BRIEF #5) ---------------------------------------------
+// The payload is built by cahyana-api/push.js: { title, body, tab, tag }. Only
+// a booking ref and a tour name ever reach the lock screen. The icon is the
+// Lucide bell, the same glyph as the Settings row (tools/make-bell-icons.js).
+const SECTIONS = new Set(['attention', 'upcoming', 'past', 'undated', 'prices', 'promo', 'content', 'reviews', 'chat', 'settings']);
+
+self.addEventListener('push', (e) => {
+  let p = {};
+  try { p = e.data ? e.data.json() : {}; } catch { p = { body: e.data ? e.data.text() : '' }; }
+  const tab = SECTIONS.has(p.tab) ? p.tab : '';
+  e.waitUntil(self.registration.showNotification(p.title || 'Cahyana dashboard', {
+    body: p.body || '',
+    icon: '/icons/bell-192.png',
+    badge: '/icons/bell-badge-96.png',
+    // Same kind replaces the last one instead of stacking ten "Chat" banners.
+    tag: p.tag || 'dashboard',
+    renotify: true,
+    data: { url: tab ? `/?tab=${tab}` : '/' },
+  }));
+});
+
+// Tap: focus a dashboard that is already open and move it to the section, or
+// open one. Only paths on this origin, built above - never a URL from the payload.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of wins) {
+      if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+        await w.focus();
+        if ('navigate' in w) return w.navigate(url);
+        return undefined;
+      }
+    }
+    return self.clients.openWindow(url);
+  })());
 });

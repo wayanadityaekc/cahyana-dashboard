@@ -6,5 +6,13 @@
 // things that a static build cannot have: the page itself can be gated before it
 // is ever sent, and the token can live in an httpOnly cookie the browser's own
 // JavaScript cannot read.
-const nextConfig = {};
+//
+// The two env values are only for Settings > About (DASHBOARD BRIEF #5): when
+// this build was made, and which commit (Vercel sets VERCEL_GIT_COMMIT_SHA).
+const nextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    NEXT_PUBLIC_BUILD_SHA: process.env.VERCEL_GIT_COMMIT_SHA || '',
+  },
+};
 export default nextConfig;
