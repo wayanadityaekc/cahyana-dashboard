@@ -84,11 +84,18 @@ export const RAIL_FRAME_CARD = `${FRAME_DESK} max-[992px]:rounded-md max-[992px]
 //
 // Subtracts the navbar (--header-h) and RAIL_PAGE_SCROLL's own top/bottom
 // padding. No fixed-footer term: AppBottomNav is phone-only
-// (`standalone:max-[993px]`), well below where this rule applies.
+// (`max-[993px]`), below where this rule applies.
+//
+// PHONES keep the border, so the frame pads its own content (DASHBOARD BRIEF #3:
+// the title used to touch the card's left edge). Same inset and no shadow, as
+// the public site's RAIL_FRAME_SCROLL / guide card (RAIL_MAIN_CARD): 24px,
+// 16px under 560. Desktop is unchanged.
 export const RAIL_FRAME_SCROLL =
   'flex items-stretch bg-white [border:1px_solid_var(--line)] rounded-[var(--r-lg)] ' +
   'min-[993px]:h-[calc(100dvh_-_var(--header-h,58px)_-_var(--space-3)_-_var(--space-3))] ' +
-  'overflow-clip [box-shadow:var(--shadow-md)] max-[992px]:block';
+  'overflow-clip [box-shadow:var(--shadow-md)] max-[992px]:[box-shadow:none] ' +
+  'max-[992px]:block max-[992px]:px-6 max-[992px]:pt-6 max-[992px]:pb-8 ' +
+  'max-[560px]:px-4 max-[560px]:pt-5 max-[560px]:pb-[1.6rem]';
 
 // --- desktop rail -----------------------------------------------------------
 export const RAIL_ASIDE =

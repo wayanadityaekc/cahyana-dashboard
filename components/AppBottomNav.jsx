@@ -1,22 +1,24 @@
 'use client';
 
 import { AlertTriangle, CalendarDays, History, Tag } from 'lucide-react';
-import { APP_ONLY } from '@/components/pwaClasses';
+import { PHONE_ONLY } from '@/components/pwaClasses';
 
-// The bottom bar an installed dashboard gets. Four of the rail sections - the
+// The dashboard's bottom bar, on every phone-sized screen - installed or in a
+// browser tab (DASHBOARD BRIEF #3). Four of the rail sections - the
 // ones an owner opens daily. Chat is NOT here: it has its own icon in the
 // navbar (DASHBOARD BRIEF #2 Q3), so it was swapped for Past. Everything else
 // stays reachable from the navbar's drawer.
 //
-// Unlike the public site there is nothing to yield to: this app has no sticky
-// bar of its own, so the bar is simply present on every phone screen in app
-// mode. In a browser tab, and on desktop, nothing changes.
+// Unlike the public site there is nothing to yield to: this app has no other
+// sticky bar, so the bar is simply present on every phone screen. Desktop has
+// none - the rail is the menu there.
+//
 // The public site's book-bar shell (BAR_SHELL in CUE's ui/stickyBar.jsx),
 // DASHBOARD BRIEF #2 Q4: one 1px top line in --line, rounded top corners
 // (--r-xl), safe-area bottom padding, NO shadow. The paddings are the site's
 // own numbers, copied as-is so the two bars measure the same.
 const BAR =
-  `${APP_ONLY} fixed inset-x-0 bottom-0 z-[95] items-stretch ` +
+  `${PHONE_ONLY} fixed inset-x-0 bottom-0 z-[95] items-stretch ` +
   'pt-[0.55rem] pl-[1.1rem] pr-[0.9rem] pb-[max(0.55rem,env(safe-area-inset-bottom))] ' +
   'bg-white [border-top:1px_solid_var(--line)] rounded-t-[var(--r-xl)]';
 

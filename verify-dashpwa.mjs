@@ -68,7 +68,9 @@ const box = (page, sel) => page.evaluate((s) => {
   const css = walk('.next/static').filter((p) => p.endsWith('.css')).map((p) => readFileSync(p, 'utf8')).join('\n');
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const classes = [...new Set(css.match(/\.standalone\\:[^{\s,]+/g) || [])];
-  ok(classes.length >= 2, `css: only ${classes.length} standalone utilities compiled - interpolated class names never reach Tailwind`);
+  // Since DASHBOARD BRIEF #3 nothing depends on app mode (the tab bar shows on
+  // every phone), so zero standalone utilities is correct now. Any that come
+  // back must still carry both branches.
   for (const c of classes) {
     const re = new RegExp(`${esc(c)}(?:[^{,]*)\\{([^}]*)\\}`, 'g');
     let m; const media = []; const attr = [];
@@ -144,7 +146,7 @@ await bootstrap(b);
   await ctx.close();
 }
 
-// ---- 3. browser tab: no bar ----
+// ---- 3. browser tab: the bar shows on phones, not on desktop (BRIEF #3) ----
 for (const w of [390, 768, 1280]) {
   const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
   const page = await ctx.newPage();
@@ -152,7 +154,8 @@ for (const w of [390, 768, 1280]) {
   page.on('pageerror', (e) => errs.push(String(e)));
   await signIn(page);
   const nav = await box(page, '[data-appnav]');
-  ok(nav && nav.display === 'none', `tab ${w}: bottom bar is showing in a browser tab`);
+  if (w > 992) ok(nav && nav.display === 'none', `tab ${w}: bottom bar is showing on desktop`);
+  else ok(nav && nav.display !== 'none', `tab ${w}: no bottom bar on a phone in a browser tab`);
   ok(errs.length === 0, `tab ${w}: page errors ${errs.join(' | ')}`);
   await page.close();
   await ctx.close();

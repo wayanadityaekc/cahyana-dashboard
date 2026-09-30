@@ -40,7 +40,7 @@ export default function RootLayout({ children }) {
       </head>
       {/* Room for the bottom bar, reserved only where the bar exists. Measured:
           the bar is 65px since it took the site's book-bar paddings. */}
-      <body className="standalone:max-[993px]:pb-[68px]">
+      <body className="max-[993px]:pb-[68px]">
         <PwaRegister />
         {children}</body>
     </html>

@@ -1,10 +1,11 @@
-// App mode, in one string, written out IN FULL.
+// Where the bottom tab bar shows, in one string, written out IN FULL.
 //
 // It has to be spelled out: Tailwind scans source TEXT, so a class assembled by
 // interpolation is never generated. That exact mistake shipped silently on the
-// public site first - the bar stayed display:none in app mode with no error
-// anywhere - so the site's copy of this file carries the same warning.
+// public site first - the bar stayed display:none with no error anywhere.
 //
-// Phone width only. A desktop install keeps the rail, which is the better
-// navigation when there is room for it.
-export const APP_ONLY = 'hidden standalone:max-[993px]:flex';
+// Phone width, installed or not (DASHBOARD BRIEF #3: the tab bar shows in a
+// normal browser tab too; it used to be installed-app only). max-[993px] =
+// below 993, the same line the navbar's hamburger uses (min-[993px]:hidden),
+// so bar and burger switch together. Desktop keeps the rail.
+export const PHONE_ONLY = 'hidden max-[993px]:flex';

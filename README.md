@@ -197,8 +197,8 @@ time and what the harness caught.
 ## Installing it on a phone
 
 The dashboard is a PWA: add it to the home screen and it opens without browser
-chrome, with a bottom bar added under the page. In a browser tab, and on
-desktop at any width, there is no bottom bar.
+chrome. The bottom bar shows on every phone-sized screen (below 993px),
+installed or in a browser tab (DASHBOARD BRIEF #3); desktop has none.
 
 - **Navbar** (`components/Navbar.jsx`, every width): the site's own header.
   Phones get the hamburger + left drawer holding the sections (not Chat), a
@@ -210,11 +210,11 @@ desktop at any width, there is no bottom bar.
   site's book bar (1px top line, rounded top corners, no shadow). The bar,
   the rail and the drawer all drive the **same `tab` state**, so they cannot
   disagree about what is open.
-- **`components/pwaClasses.js`** holds the one condition, and the string is
-  written out **in full on purpose**: Tailwind scans source text, so a class
-  assembled by interpolation is never generated. That exact mistake shipped on
-  the public site first and failed silently - the bar stayed `display:none` in
-  app mode with no error anywhere.
+- **`components/pwaClasses.js`** holds the one condition (`PHONE_ONLY`), and the
+  string is written out **in full on purpose**: Tailwind scans source text, so a
+  class assembled by interpolation is never generated. That exact mistake shipped
+  on the public site first and failed silently - the bar stayed `display:none`
+  with no error anywhere.
 - **`@custom-variant standalone`** (in `app/globals.css`) is deliberately two
   selectors: `@media (display-mode: standalone)` for Chrome/Android and iOS
   16.4+, and `html[data-standalone]` for older iPhones, which only expose

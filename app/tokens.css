@@ -167,3 +167,11 @@ a[class~="rounded-pill"]:active {
     scale: 1;
   }
 }
+
+/* Phone gutter = the public site's: 16px at 992px and below (DASHBOARD BRIEF #3).
+   Written here AND in globals.css, same as the site, so whichever loads last
+   says the same thing. With 24px the content card sat 8px inside the navbar's
+   hamburger, which is at 16. */
+@media (max-width: 992px) {
+  :root { --container-x: 1rem; }
+}

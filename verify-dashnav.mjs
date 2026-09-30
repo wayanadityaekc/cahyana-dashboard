@@ -232,21 +232,72 @@ for (const w of [320, 390, 768, 1280]) {
   ok(!!ref, 'site: no .bookbar on /ubud-tour.html to measure against');
   await cctx.close();
 
-  for (const w of [320, 390, 768]) {
+  // DASHBOARD BRIEF #3: the bar shows on every phone-sized screen, installed
+  // (app) or in a normal browser tab - and never on desktop, in either mode.
+  for (const [mode, w] of [['app', 320], ['app', 390], ['app', 768], ['tab', 320], ['tab', 390], ['tab', 768], ['tab', 992], ['app', 1280], ['tab', 1280]]) {
     const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
     const page = await ctx.newPage();
-    await appMode(page);
+    if (mode === 'app') await appMode(page);
     await page.goto(DASH + '/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
+    const shown = await page.evaluate(() => getComputedStyle(document.querySelector('[data-appnav]')).display !== 'none');
+    if (w > 992) {
+      ok(!shown, `${mode} ${w}: tab bar showing on desktop`);
+      await ctx.close();
+      continue;
+    }
+    ok(shown, `${mode} ${w}: no tab bar on a phone-sized screen`);
+    const burger = await page.evaluate(() => getComputedStyle(document.querySelector('#hamburger')).display !== 'none');
+    ok(burger === shown, `${mode} ${w}: tab bar and hamburger disagree about "phone" (bar ${shown}, burger ${burger})`);
     const bar = await shell(page, '[data-appnav]');
     for (const k of ['bt', 'bl', 'rtl', 'rtr', 'rbl', 'shadow', 'bg', 'pt', 'pl', 'pr', 'pb']) {
-      ok(bar && ref && bar[k] === ref[k], `app ${w}: tab bar ${k} "${bar && bar[k]}" vs site book bar "${ref && ref[k]}"`);
+      ok(bar && ref && bar[k] === ref[k], `${mode} ${w}: tab bar ${k} "${bar && bar[k]}" vs site book bar "${ref && ref[k]}"`);
     }
     const cells = await page.$$eval('[data-appnav] > button', (e) => e.map((x) => x.textContent.replace(/\d+/g, '').trim()));
-    ok(cells.join() === 'Attention,Upcoming,Past,Prices', `app ${w}: tab bar cells are ${cells.join()}`);
+    ok(cells.join() === 'Attention,Upcoming,Past,Prices', `${mode} ${w}: tab bar cells are ${cells.join()}`);
     const r = await page.evaluate(() => { const n = document.querySelector('[data-appnav]').getBoundingClientRect(); return { b: n.bottom, h: n.height, pad: parseFloat(getComputedStyle(document.body).paddingBottom) }; });
-    ok(near(r.b, 844), `app ${w}: tab bar not flush at the bottom (${r.b})`);
-    ok(r.pad >= r.h && r.pad - r.h <= 14, `app ${w}: body reserves ${r.pad}px for a ${r.h}px bar`);
+    ok(near(r.b, 844), `${mode} ${w}: tab bar not flush at the bottom (${r.b})`);
+    ok(r.pad >= r.h && r.pad - r.h <= 14, `${mode} ${w}: body reserves ${r.pad}px for a ${r.h}px bar`);
+    await ctx.close();
+  }
+}
+
+// ---- phone content card: padded like the site's (DASHBOARD BRIEF #3) ----
+// Compared against CUE's own scroll-frame page (My Trips), which keeps the same
+// bordered card on phones. The inset is read from both pages, not typed here.
+{
+  const card = (page) => page.evaluate(() => {
+    const frame = document.querySelector('aside')?.parentElement;
+    const main = frame && frame.querySelector('main');
+    if (!frame || !main) return null;
+    const c = getComputedStyle(frame);
+    const fr = frame.getBoundingClientRect();
+    const h1 = document.querySelector('main h1') || main.firstElementChild;
+    const hr = h1.getBoundingClientRect();
+    return { pl: c.paddingLeft, pr: c.paddingRight, pt: c.paddingTop, pb: c.paddingBottom, border: c.borderLeft,
+      rad: c.borderTopLeftRadius, shadow: c.boxShadow, frameX: fr.left, insetX: hr.left - fr.left, insetY: hr.top - fr.top };
+  });
+  for (const w of [320, 390, 768]) {
+    const cctx = await b.newContext({ viewport: { width: w, height: 844 } });
+    const cpage = await cctx.newPage();
+    await cpage.goto(CUE + '/my-trips.html', { waitUntil: 'networkidle' });
+    await cpage.waitForTimeout(400);
+    const ref = await card(cpage);
+    ok(!!ref, `site ${w}: no rail frame on /my-trips.html to measure against`);
+    await cctx.close();
+
+    const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
+    const page = await ctx.newPage();
+    await page.goto(DASH + '/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    const d = await card(page);
+    for (const k of ['pl', 'pr', 'pt', 'pb', 'border', 'rad', 'shadow']) {
+      ok(d && ref && d[k] === ref[k], `card ${w}: ${k} "${d && d[k]}" vs site "${ref && ref[k]}"`);
+    }
+    ok(d && ref && near(d.frameX, ref.frameX), `card ${w}: card starts at x=${d && d.frameX}, site's at ${ref && ref.frameX}`);
+    // The actual complaint: the title touched the card edge.
+    ok(d && d.insetX >= 16, `card ${w}: title sits ${d && d.insetX}px from the card's left edge`);
+    ok(d && d.insetY >= 16, `card ${w}: title sits ${d && d.insetY}px below the card's top edge`);
     await ctx.close();
   }
 }
