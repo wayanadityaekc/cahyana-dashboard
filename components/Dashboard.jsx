@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, LogOut, Tag, MessageCircle , Star } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
+import Navbar from '@/components/Navbar';
 import { RAIL_PAGE_SCROLL } from '@/components/ui/railClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { FIELD_INPUT } from '@/components/ui/formClasses';
@@ -87,10 +88,6 @@ export default function Dashboard({ demo = false }) {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState('upcoming');
-  // Phone: land straight on the bookings, not on the menu. This page HAS an
-  // obvious default (Upcoming), and an owner opening it wants the bookings, not
-  // a list of section names. Back still reaches the list from here.
-  const [reading, setReading] = useState(true);
   const [q, setQ] = useState('');
   // Guest messages nobody has answered yet, shown on the rail the same way the
   // booking buckets show their counts.
@@ -98,6 +95,7 @@ export default function Dashboard({ demo = false }) {
 
   // An expired session is not an error to read: send them to the door.
   const expired = useCallback(() => { router.replace('/login'); }, [router]);
+  const signOut = useCallback(async () => { await logout(); router.replace('/login'); }, [router]);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -132,15 +130,31 @@ export default function Dashboard({ demo = false }) {
     ),
   }));
 
+  // The phone drawer lists every section except Chat, which has its own icon
+  // in the navbar (DASHBOARD BRIEF #1). The desktop rail is unchanged and
+  // still carries Chat.
+  const countOf = (id) => (id === 'chat' ? unread : data && data[id] ? (data[id] || []).length : null);
+  const drawer = SECTIONS.filter((s) => s.id !== 'chat').map((s) => ({ ...s, count: countOf(s.id) }));
+
   return (
+    <>
+    <Navbar
+      sections={drawer}
+      active={tab}
+      onPick={setTab}
+      unread={unread || 0}
+      onChat={() => setTab('chat')}
+      onSignOut={signOut}
+      demo={demo}
+    />
     <div className={RAIL_PAGE_SCROLL}>
       <RailLayout
         label="Bookings"
         items={items}
         active={tab}
-        onSelect={(id) => { setTab(id); setReading(true); }}
-        reading={reading}
-        onBack={() => setReading(false)}
+        onSelect={setTab}
+        reading
+        phoneList={false}
         collapsible
         breadcrumb={CRUMB}
         scrollContent
@@ -182,35 +196,23 @@ export default function Dashboard({ demo = false }) {
             the page is telling you, and the search box is how you dig. Only on
             the booking buckets - prices, content and chat are not bookings. */}
         {isBookings && <StatCards data={data} />}
-        <div className={TOOLS}>
-          {isBookings && (
-            <>
-              <input
-                className={`${FIELD_INPUT} !w-auto flex-1 min-w-[180px]`}
-                placeholder="Search ref, name, phone"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                aria-label="Search bookings"
-              />
-              <button type="button" className={GHOST} onClick={load} disabled={busy}>
-                <RefreshCw strokeWidth={1.7} aria-hidden="true" />
-                {busy ? 'Loading' : 'Refresh'}
-              </button>
-            </>
-          )}
-          {/* Sign out lives HERE, not in the rail's help card, because on a phone
-              that card sits on the section list - so it would be hidden behind a
-              menu tap. Measured: unreachable at 390 and 768. Signing out of an
-              admin view is not something to bury. */}
-          <button
-            type="button"
-            className={GHOST}
-            onClick={async () => { await logout(); router.replace('/login'); }}
-          >
-            <LogOut strokeWidth={1.7} aria-hidden="true" />
-            Sign out
-          </button>
-        </div>
+        {isBookings && (
+          <div className={TOOLS}>
+            <input
+              className={`${FIELD_INPUT} !w-auto flex-1 min-w-[180px]`}
+              placeholder="Search ref, name, phone"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="Search bookings"
+            />
+            <button type="button" className={GHOST} onClick={load} disabled={busy}>
+              <RefreshCw strokeWidth={1.7} aria-hidden="true" />
+              {busy ? 'Loading' : 'Refresh'}
+            </button>
+          </div>
+        )}
+        {/* Sign out moved to the navbar's account slot + the phone drawer
+            (DASHBOARD BRIEF #1/#2): reachable from every section at every width. */}
 
         {isChat && <ChatPanel onExpired={expired} onUnread={setUnread} />}
         {isPromo && <PromoPanel onExpired={expired} />}
@@ -233,13 +235,13 @@ export default function Dashboard({ demo = false }) {
           never disagree about which section is open. */}
       <AppBottomNav
         active={tab}
-        onPick={(id) => { setTab(id); setReading(true); }}
+        onPick={setTab}
         counts={{
           attention: data ? (data.attention || []).length : 0,
           upcoming: data ? (data.upcoming || []).length : 0,
-          chat: unread || 0,
         }}
       />
     </div>
+    </>
   );
 }

@@ -16,6 +16,19 @@ for (const w of [390, 768, 1280]) {
   const ctx = await b.newContext({ viewport: { width: w, height: 900 } });
   const page = await ctx.newPage();
   const errs = [];
+  const phone = w <= 992;
+  const pick = async (id, label) => {
+    if (phone) {
+      await page.click('#hamburger');
+      await page.waitForTimeout(400);
+      await page.click(`[data-drawer-row="${id}"]`);
+      await page.waitForTimeout(400);
+    } else {
+      await page.locator('aside button', { hasText: label }).first().click();
+    }
+  };
+  // Chat is its own icon in the navbar on a phone; desktop keeps it in the rail.
+  const openChat = async () => (phone ? page.click('[data-nav-chat]') : pick('chat', 'Chat'));
   page.on('pageerror', (e) => errs.push(String(e)));
 
   // A stranger gets the door, not the data.
@@ -61,8 +74,12 @@ for (const w of [390, 768, 1280]) {
   await page.waitForSelector('text=Sample Guest', { timeout: 15000 });
 
   ok(/Demo data/i.test(await page.innerText('body')), `${w}: no demo banner`);
-  ok((await page.locator('button:has-text("Sign out")').first().isVisible()),
-     `${w}: Sign out not visible`);
+  // Sign out lives in the navbar's account slot (DASHBOARD BRIEF #2), one tap
+  // away at every width.
+  await page.click('[data-account-slot] > button');
+  ok((await page.locator('[data-account-slot] button:has-text("Sign out")').first().isVisible()),
+     `${w}: Sign out not visible in the account menu`);
+  await page.keyboard.press('Escape');
 
   // Rail: a column on desktop, no column on a phone.
   const rail = page.locator('aside').first();
@@ -80,21 +97,15 @@ for (const w of [390, 768, 1280]) {
   ok(over <= 0, `${w}: page overflows by ${over}px`);
 
   // Prices section works from the browser, not just from curl.
-  // On a phone the section list is BEHIND Back - landing straight on the
-  // bookings is the deliberate choice here, so the harness has to walk the
-  // same path a visitor does instead of assuming the rail is on screen.
-  if (w < 1024) await page.click('button:has-text("Bookings")');
-  // Every section exists twice in the DOM (desktop rail + phone list) and only
-  // one of them is on screen, so the harness must pick the VISIBLE one. The
-  // phone rows are plain buttons - role=tab is desktop-only markup.
-  await page.locator('button:visible', { hasText: 'Prices' }).first().click();
+  // On a phone the sections are in the navbar's drawer (DASHBOARD BRIEF #2),
+  // so the harness walks the same path a visitor does: burger, then the row.
+  await pick('prices', 'Prices');
   await page.waitForSelector('input[value="700,000"]', { timeout: 15000 });
   ok(true, `${w}: prices loaded`);
   ok(/40/.test(await page.innerText('body')), `${w}: derived USD missing`);
 
   // ---- Chat: the guests the site's panel handed over ----
-  if (w < 1024) await page.click('button:has-text("Bookings")');
-  await page.locator('button:visible', { hasText: 'Chat' }).first().click();
+  await openChat();
   await page.waitForSelector('text=Sample Guest (Hannah W.)', { timeout: 15000 });
 
   const rows = page.locator('button:visible', { hasText: 'Sample Guest' });
@@ -119,8 +130,7 @@ for (const w of [390, 768, 1280]) {
 
   // It survives a reload, which is what makes it a demo rather than a mock.
   await page.reload({ waitUntil: 'networkidle' });
-  if (w < 1024) await page.click('button:has-text("Bookings")');
-  await page.locator('button:visible', { hasText: 'Chat' }).first().click();
+  await openChat();
   await page.waitForSelector('text=Sample Guest (Hannah W.)', { timeout: 15000 });
   const after = await page.locator('button:visible', { hasText: 'Hannah' }).innerText();
   ok(after.includes('You:'), `${w}: the reply did not survive a reload`);

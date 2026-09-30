@@ -86,6 +86,7 @@ through a package:
 | `app/tokens.css` | the site's `:root` tokens and reset |
 | `components/ui/RailLayout.jsx` | the shell behind Our Company, My Trips and the guide articles |
 | `components/ui/{railClasses,btnClasses,formClasses}.js` | the button, field and rail strings |
+| `components/Navbar.jsx` | the site's header, phone drawer and hamburger (DASHBOARD BRIEF #1/#2) |
 
 Copying is the deliberate trade. A shared package would couple a deploy of this dashboard to a
 deploy of the public site, for two products with different release rhythms and different
@@ -196,14 +197,19 @@ time and what the harness caught.
 ## Installing it on a phone
 
 The dashboard is a PWA: add it to the home screen and it opens without browser
-chrome, with a bottom bar instead of the hamburger. In a browser tab, and on
-desktop at any width, **nothing changes** - the rail is still the navigation
-there, because that is the better one when there is room for it.
+chrome, with a bottom bar added under the page. In a browser tab, and on
+desktop at any width, there is no bottom bar.
 
-- **Bottom bar** (`components/AppBottomNav.jsx`): Attention, Upcoming, Chat,
-  Prices - the four an owner opens daily. Past and No date stay in the rail,
-  which still holds all six. The bar drives the **same two pieces of state** the
-  rail drives (`tab`, `reading`), so the two cannot disagree about what is open.
+- **Navbar** (`components/Navbar.jsx`, every width): the site's own header.
+  Phones get the hamburger + left drawer holding the sections (not Chat), a
+  link to the live site and Sign out. Chat is its own icon in the bar, and the
+  account slot at the right holds Sign out. Desktop has no hamburger: the cream
+  rail is still the menu there.
+- **Bottom bar** (`components/AppBottomNav.jsx`): Attention, Upcoming, Past,
+  Prices. Chat left the bar when it got its own navbar icon. Its shell is the
+  site's book bar (1px top line, rounded top corners, no shadow). The bar,
+  the rail and the drawer all drive the **same `tab` state**, so they cannot
+  disagree about what is open.
 - **`components/pwaClasses.js`** holds the one condition, and the string is
   written out **in full on purpose**: Tailwind scans source text, so a class
   assembled by interpolation is never generated. That exact mistake shipped on
@@ -289,3 +295,9 @@ The second of those is the one worth keeping. The first version of the harness o
 that the login page's HTML contained no booking data — and a route that handed bookings to
 *anyone* passed it 53/53, because the login page never calls that route. An assertion that
 only proves the harness agrees with itself is not a test.
+
+`verify-dashnav.mjs` measures the navbar, the phone drawer and the app tab bar **against the
+public site's own build**, in the same browser at the same width (320, 390, 768, 1280): gutter,
+logo, hamburger box and bars, chat icon, drawer width and edge, row type and pills, close
+button, and the tab bar shell against CUE's real `.bookbar`. It needs CUE's `out/` served on
+port 4000 (`node tools/serve-out.js` in the CUE repo).

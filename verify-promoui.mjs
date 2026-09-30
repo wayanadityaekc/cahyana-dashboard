@@ -45,9 +45,14 @@ for (const w of [390, 1280]) {
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
 
-  // On a phone the rail is a list you open first.
-  if (w < 993) await page.click('button:has-text("Bookings")').catch(() => {});
-  await page.locator('button:visible', { hasText: 'Sale' }).first().click({ timeout: 8000 }).catch(() => {});
+  // On a phone the sections live in the navbar's drawer (DASHBOARD BRIEF #2).
+  if (w < 993) {
+    await page.click('#hamburger');
+    await page.waitForTimeout(400);
+    await page.click('[data-drawer-row="promo"]', { timeout: 8000 }).catch(() => {});
+  } else {
+    await page.locator('aside button', { hasText: 'Sale' }).first().click({ timeout: 8000 }).catch(() => {});
+  }
   await page.waitForTimeout(700);
 
   const tag = `${w}`;

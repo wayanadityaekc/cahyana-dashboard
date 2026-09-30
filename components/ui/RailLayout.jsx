@@ -56,6 +56,9 @@ export default function RailLayout({
   // the frame's own bottom border never scrolls out of view). Overrides
   // frameClass/mainClass with the capped-height variants when true.
   scrollContent = false,
+  // Dashboard only (DASHBOARD BRIEF #2): false = no phone list screen and no
+  // back row - the navbar's drawer is the phone's section menu instead.
+  phoneList = true,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -126,7 +129,7 @@ export default function RailLayout({
       {/* Phone: the same sections as a full-width list. Hidden outright once one
           is open, and never shown at all on desktop. Skipped completely when the
           caller brings its own phone control. */}
-      {!mobileNav && (
+      {!mobileNav && phoneList && (
         <div className={reading ? 'hidden' : RAIL_MLIST}>
           <p className={RAIL_MLABEL}>{label}</p>
           {rows(true)}
@@ -134,7 +137,7 @@ export default function RailLayout({
         </div>
       )}
 
-      <main className={`${effectiveMainClass} ${mobileNav || reading ? '' : 'max-[992px]:hidden'}`}>
+      <main className={`${effectiveMainClass} ${mobileNav || reading || !phoneList ? '' : 'max-[992px]:hidden'}`}>
         {/* Header row: collapse trigger + breadcrumb (desktop only - mobile
             never had a sidebar to collapse, and its own back row already
             names the section). In scroll mode <main> carries no padding of
@@ -157,12 +160,12 @@ export default function RailLayout({
             {breadcrumb && <Breadcrumb items={breadcrumb} className="m-0" />}
           </div>
         )}
-        {mobileNav || (
+        {mobileNav || (phoneList && (
           <button type="button" className={RAIL_BACK} onClick={onBack}>
             <ChevronLeft strokeWidth={1.7} aria-hidden="true" />
             {label}
           </button>
-        )}
+        ))}
         {/* Only this piece scrolls in scroll mode - the header above stays
             put. Plain children otherwise, unchanged from before. */}
         {scrollContent ? <div className={RAIL_SCROLL_BODY}>{children}</div> : children}
