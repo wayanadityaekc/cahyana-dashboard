@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Bell, ChevronDown, ExternalLink, LayoutDashboard, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
 import { MENU_ROW_BOX } from '@/components/ui/railClasses';
+import useScrollLock from '@/lib/useScrollLock';
 
 // The dashboard's header, ported from the public site's navbar (Sep 2026,
 // DASHBOARD BRIEF #1/#2: "same style as the website navbar"). The strings below
@@ -145,6 +146,7 @@ export default function Navbar({
   dash = null, showChat = true,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  useScrollLock(menuOpen);
   const headerRef = useRef(null);
   const navRef = useRef(null);
   const burgerRef = useRef(null);
@@ -171,13 +173,10 @@ export default function Navbar({
     // The drawer is phones only: widening the window past it closes it.
     const mq = window.matchMedia('(min-width: 993px)');
     const onMq = () => { if (mq.matches) setMenuOpen(false); };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     document.addEventListener('click', onDoc);
     document.addEventListener('keydown', onKey);
     mq.addEventListener('change', onMq);
     return () => {
-      document.body.style.overflow = prev;
       document.removeEventListener('click', onDoc);
       document.removeEventListener('keydown', onKey);
       mq.removeEventListener('change', onMq);

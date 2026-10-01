@@ -417,3 +417,20 @@ Same servers as above (`driver-dev-server.js` now also seeds a villa bundle), pl
 PG_URL_FILE=/tmp/pgurl.txt node tools/driver-dev-server.js     # in cahyana-api; also needs PUSH_LOG
 PG_URL_FILE=/tmp/pgurl.txt node verify-split.mjs
 ```
+
+## Standing rules: phone input zoom + popup scroll lock (DASHBOARD BRIEF #9)
+Both apply to everything built later, not just what exists today.
+- **No zoom on focus.** iOS Safari zooms the page when a focused field is under
+  16px. `app/globals.css` sets every `input` (not checkbox/radio/range), `select`
+  and `textarea` to 16px at `max-width: 992px` or on touch screens
+  (`pointer: coarse`), with `!important`, on the bare elements - not on a class,
+  so a new field is covered without remembering. Desktop stays 12.8px. Do not
+  fix a zoom by changing `viewport` (`maximum-scale` takes pinch-zoom from
+  Android users).
+- **Popups lock the page.** Any popup, dialog, drawer or sheet calls
+  `useScrollLock(open)` from `lib/useScrollLock.js`. It counts, so two overlays
+  open together unlock only when the last closes. Never set
+  `document.body.style.overflow` by hand.
+- Checked by `verify-mobile.mjs` (every field on every owner tab, `/login`,
+  `/villas` and the driver app at 390/768/1280; drawer and push gate lock and
+  release the page).

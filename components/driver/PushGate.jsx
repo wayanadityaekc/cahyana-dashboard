@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { BellRing, Share } from 'lucide-react';
 import { CTA } from '@/components/ui/panelClasses';
+import useScrollLock from '@/lib/useScrollLock';
 
 // The firm ask (DASHBOARD BRIEF #7 Q4: "push them firmly to turn notifications
 // on, not just a quiet toggle buried in settings, since missing a push could
@@ -28,6 +29,7 @@ const ERR = 'font-body text-small text-err m-0';
 
 export default function PushGate({ push, onLater }) {
   const btn = useRef(null);
+  useScrollLock(true);
   useEffect(() => { btn.current?.focus(); }, []);
   const env = push.env || {};
   const denied = env.permission === 'denied';
