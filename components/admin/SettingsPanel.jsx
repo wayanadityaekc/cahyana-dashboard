@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, ExternalLink, LogOut, ShieldAlert, UserRound } from 'lucide-react';
+import { Bell, LogOut, ShieldAlert, UserRound } from 'lucide-react';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
 import { SITE_URL } from '@/components/Navbar';
@@ -225,7 +225,7 @@ export default function SettingsPanel({ onExpired, onSignOut }) {
 
       <section className={CARD} aria-labelledby="set-about">
         <h2 id="set-about" className={HEAD}>About</h2>
-        <a className={LINK} href={SITE_URL} target="_blank" rel="noopener"><ExternalLink strokeWidth={1.7} aria-hidden="true" />Live website</a>
+        <a className={LINK} href={SITE_URL} target="_blank" rel="noopener">Live website</a>
         <p className={NOTE}>
           Cahyana dashboard{process.env.NEXT_PUBLIC_BUILD_TIME ? ` - built ${fmtDate(process.env.NEXT_PUBLIC_BUILD_TIME)}` : ''}
           {process.env.NEXT_PUBLIC_BUILD_SHA ? ` (${process.env.NEXT_PUBLIC_BUILD_SHA.slice(0, 7)})` : ''}.

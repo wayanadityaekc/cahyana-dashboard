@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronRight, ChevronLeft, PanelLeft } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
 import { readLocal, writeLocal } from '@/lib/storage';
 import {
   RAIL_FRAME, RAIL_ASIDE, RAIL_ASIDE_COLLAPSED, RAIL_STICK, RAIL_STICK_COLLAPSED,
   RAIL_LABEL, railItem, RAIL_SPLIT,
-  RAIL_MAIN, RAIL_MLIST, RAIL_MLABEL, railMobileItem, RAIL_MCHEV, RAIL_BACK,
+  RAIL_MAIN, RAIL_MLIST, RAIL_MLABEL, railMobileItem, RAIL_BACK,
   RAIL_HEADER, RAIL_TRIGGER, RAIL_HEADER_SEP, RAIL_HEADER_PAD,
   RAIL_FRAME_SCROLL, RAIL_MAIN_SCROLL, RAIL_SCROLL_BODY,
 } from './railClasses';
@@ -81,7 +81,6 @@ export default function RailLayout({
         <>
           {t.Icon && <t.Icon strokeWidth={1.7} aria-hidden="true" />}
           {(!railCollapsed || mobile) && t.label}
-          {mobile && <ChevronRight className={RAIL_MCHEV} strokeWidth={1.7} aria-hidden="true" />}
         </>
       );
       // Collapsed: the label is still the accessible name (title + aria-label),
@@ -162,7 +161,6 @@ export default function RailLayout({
         )}
         {mobileNav || (phoneList && (
           <button type="button" className={RAIL_BACK} onClick={onBack}>
-            <ChevronLeft strokeWidth={1.7} aria-hidden="true" />
             {label}
           </button>
         ))}

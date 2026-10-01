@@ -471,3 +471,6 @@ there is no share sheet (desktop) it copies the same text instead and says so. C
   back. The card remembers it in memory for that page session only; after a reload the card's Share sends the
   link and username and says the password is not stored (set a new one to include it).
 - Checked by `verify-brief12.mjs` (part 3).
+
+## Logo splash + no arrows
+`components/ui/LoadingScreen.jsx` (mounted in `app/layout.jsx`): the same logo splash as the website. It covers arrival, fades once the page loads, and returns on a same-origin link click. Arrow icons (ArrowRight, Chevron left/right, ExternalLink) were removed from buttons and links; dropdown carets stay. `verify-loader.mjs` checks both.

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ExternalLink, Plus, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Plus, X } from 'lucide-react';
 import { FIELD_INPUT, FIELD_LABEL, FIELD_AREA } from '@/components/ui/formClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
@@ -423,7 +423,7 @@ export default function ContentPanel({ onExpired }) {
               <>
                 {' '}
                 <a href={data.compareUrl} target="_blank" rel="noopener" className="text-gold" data-compare>
-                  review the changes <ExternalLink aria-hidden="true" style={{ display: 'inline', width: 12, height: 12 }} />
+                  review the changes
                 </a>
               </>
             )}
@@ -447,7 +447,7 @@ export default function ContentPanel({ onExpired }) {
               <>
                 {' '}
                 <a href={data.build.url} target="_blank" rel="noopener" className="text-gold">
-                  {data.build.state === 'awaiting-merge' ? 'review the diff' : 'build log'} <ExternalLink aria-hidden="true" style={{ display: 'inline', width: 12, height: 12 }} />
+                  {data.build.state === 'awaiting-merge' ? 'review the diff' : 'build log'}
                 </a>
               </>
             )}

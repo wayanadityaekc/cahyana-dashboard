@@ -214,7 +214,6 @@ export const railMobileItem = (active) =>
   'bg-transparent border-none cursor-pointer font-body text-body leading-[1.35] ' +
   (active ? 'font-semibold text-gold bg-cream' : 'text-muted [&>svg]:opacity-75');
 
-export const RAIL_MCHEV = 'ml-auto w-[var(--icon-sm)] h-[var(--icon-sm)] shrink-0 text-muted opacity-70';
 
 export const RAIL_BACK =
   'min-[993px]:hidden flex items-center gap-[var(--space-1)] mb-[var(--space-2)] p-0 ' +

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Compass, Home } from 'lucide-react';
+import { Compass, Home } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { RAIL_PAGE } from '@/components/ui/railClasses';
 import { getJson, logout, Unauthorized } from '@/lib/api';
@@ -69,7 +69,7 @@ export default function Landing({ demo = false }) {
             <p className={FACT} data-tile-fact>
               {cue ? <><span className={BIG}>{n(cue, 'attention')}</span> need attention, <span className={BIG}>{n(cue, 'upcoming')}</span> upcoming</> : 'Loading...'}
             </p>
-            <span className={GO}>Open <ArrowRight strokeWidth={1.8} aria-hidden="true" /></span>
+            <span className={GO}>Open</span>
           </a>
           <a className={TILE} href="/villas" data-tile="villas">
             <span className={ICON}><Home strokeWidth={1.6} aria-hidden="true" /></span>
@@ -78,7 +78,7 @@ export default function Landing({ demo = false }) {
             <p className={FACT} data-tile-fact>
               {villa ? <><span className={BIG}>{n(villa, 'upcoming')}</span> upcoming stay{n(villa, 'upcoming') === 1 ? '' : 's'}</> : 'Loading...'}
             </p>
-            <span className={GO}>Open <ArrowRight strokeWidth={1.8} aria-hidden="true" /></span>
+            <span className={GO}>Open</span>
           </a>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bell, ChevronDown, ExternalLink, LayoutDashboard, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
+import { Bell, ChevronDown, LayoutDashboard, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
 import { MENU_ROW_BOX } from '@/components/ui/railClasses';
 import useScrollLock from '@/lib/useScrollLock';
 
@@ -271,7 +271,7 @@ export default function Navbar({
             <li className={`mt-auto pt-4 ${NAV_LI}`}>
               <span className={SPLIT} aria-hidden="true" />
               <a href={SITE_URL} target="_blank" rel="noopener" className={navLink(false)} tabIndex={menuOpen ? 0 : -1} data-drawer-site>
-                <ExternalLink strokeWidth={1.7} aria-hidden="true" />Live website
+                Live website
               </a>
             </li>
             )}
