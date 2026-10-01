@@ -6,6 +6,7 @@ import { BTN_SM } from '@/components/ui/btnClasses';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
 import { SITE_URL } from '@/components/Navbar';
 import Switch from '@/components/ui/Switch';
+import CheckUpdate from '@/components/ui/CheckUpdate';
 import { urlB64ToUint8Array, deviceLabel } from '@/lib/pushClient';
 
 // Settings (DASHBOARD BRIEF #4/#5): account, push notifications, about.
@@ -226,6 +227,7 @@ export default function SettingsPanel({ onExpired, onSignOut }) {
       <section className={CARD} aria-labelledby="set-about">
         <h2 id="set-about" className={HEAD}>About</h2>
         <a className={LINK} href={SITE_URL} target="_blank" rel="noopener"><ExternalLink strokeWidth={1.7} aria-hidden="true" />Live website</a>
+        <CheckUpdate />
         <p className={NOTE}>
           Cahyana dashboard{process.env.NEXT_PUBLIC_BUILD_TIME ? ` - built ${fmtDate(process.env.NEXT_PUBLIC_BUILD_TIME)}` : ''}
           {process.env.NEXT_PUBLIC_BUILD_SHA ? ` (${process.env.NEXT_PUBLIC_BUILD_SHA.slice(0, 7)})` : ''}.

@@ -471,3 +471,6 @@ there is no share sheet (desktop) it copies the same text instead and says so. C
   back. The card remembers it in memory for that page session only; after a reload the card's Share sends the
   link and username and says the password is not stored (set a new one to include it).
 - Checked by `verify-brief12.mjs` (part 3).
+
+## Check for updates (manual)
+`components/ui/CheckUpdate.jsx`: a "Check for updates" button in owner Settings and the driver Account tab. It asks `/api/build` which build is live; if it differs from the running one it clears the worker caches and reloads, otherwise says "You have the latest version." Verified by `verify-checkupdate.mjs` (owner 1280/390, driver 390). The automatic banner (`UpdatePrompt`) is unchanged.

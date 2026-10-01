@@ -1,7 +1,8 @@
 'use client';
 
-import { Bell, KeyRound, LogOut, UserRound } from 'lucide-react';
+import { Bell, KeyRound, LogOut, RefreshCw, UserRound } from 'lucide-react';
 import Switch from '@/components/ui/Switch';
+import CheckUpdate from '@/components/ui/CheckUpdate';
 import { CARD, STACK, HEAD, NOTE, ERR, OKMSG, BTNS, GHOST } from '@/components/ui/panelClasses';
 
 // Account (DASHBOARD BRIEF #7): who is signed in, job alerts on this phone,
@@ -49,6 +50,11 @@ export default function AccountTab({ me, push, onExpired, onSignOut }) {
       <section className={CARD} aria-labelledby="acc-pw">
         <h2 id="acc-pw" className={HEAD}><KeyRound strokeWidth={1.7} aria-hidden="true" />Password</h2>
         <p className={NOTE}>Cahyana sets your password. To change it or if you forgot it, ask Cahyana.</p>
+      </section>
+
+      <section className={CARD} aria-labelledby="acc-upd">
+        <h2 id="acc-upd" className={HEAD}><RefreshCw strokeWidth={1.7} aria-hidden="true" />App version</h2>
+        <CheckUpdate />
       </section>
     </div>
   );
