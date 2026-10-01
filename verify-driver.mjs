@@ -103,7 +103,7 @@ let OWNER, madePw;
   await page.locator('aside button', { hasText: 'Drivers' }).first().click();
   await page.locator('[data-driver-create]').waitFor({ timeout: 8000 });
   const add = async (name, user, pass) => {
-    await page.fill('#drv-name', name); await page.fill('#drv-user', user); await page.fill('#drv-pass', pass || '');
+    await page.fill('#drv-name', name); await page.fill('#drv-phone', '+62 812 0000 111'); await page.fill('#drv-user', user); await page.fill('#drv-pass', pass);
     await page.click('[data-driver-create] button[type=submit]');
     await page.locator('[data-new-password]').waitFor({ timeout: 8000 });
     const out = { user: await text(page, '[data-secret-user]'), pass: await text(page, '[data-secret-pass]') };
@@ -112,13 +112,27 @@ let OWNER, madePw;
   };
   const w = await add('Wayan', 'wayan', 'wayan-drives-1');
   ok(w.user === 'wayan' && w.pass === 'wayan-drives-1', `own password shown once ${JSON.stringify(w)}`);
-  const m = await add('Made', 'made', '');
+  // DASHBOARD BRIEF #11: phone and password are required, and there is no generated-password path.
+  ok(await page.locator('#drv-phone').getAttribute('required') !== null, 'phone field is not required');
+  ok(await page.locator('#drv-pass').getAttribute('required') !== null, 'password field is not required');
+  ok(!/optional|generate/i.test(await text(page, '[data-driver-create]')), 'the add form still mentions optional / generated');
+  ok(await page.locator('#drv-pass').getAttribute('placeholder') === null, 'password placeholder offers a way to leave it empty');
+  await page.fill('#drv-name', 'Nobody'); await page.fill('#drv-user', 'nobody1'); await page.fill('#drv-pass', 'long-enough-1');
+  await page.click('[data-driver-create] button[type=submit]');
+  await page.waitForTimeout(500);
+  ok(await page.locator('[data-new-password]').count() === 0 && await page.locator('[data-driver]').count() === 1, 'a driver with no phone was created');
+  await page.fill('#drv-phone', '+62 812'); await page.fill('#drv-pass', '');
+  await page.click('[data-driver-create] button[type=submit]');
+  await page.waitForTimeout(500);
+  ok(await page.locator('[data-new-password]').count() === 0 && await page.locator('[data-driver]').count() === 1, 'a driver with no password was created');
+  await page.fill('#drv-name', ''); await page.fill('#drv-user', ''); await page.fill('#drv-phone', ''); await page.fill('#drv-pass', '');
+  const m = await add('Made', 'made', 'made-drives-1');
   madePw = m.pass;
-  ok(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/.test(m.pass), `generated password ${m.pass}`);
+  ok(m.pass === 'made-drives-1', `owner-typed password echoed once ${m.pass}`);
   ok(await page.locator('[data-new-password]').count() === 0, 'the password stayed on screen after Done');
   ok(await page.locator('[data-driver]').count() === 2, 'two driver cards');
   // duplicate refused, visibly
-  await page.fill('#drv-name', 'Made 2'); await page.fill('#drv-user', 'made'); await page.click('[data-driver-create] button[type=submit]');
+  await page.fill('#drv-name', 'Made 2'); await page.fill('#drv-phone', '+62 8'); await page.fill('#drv-pass', 'another-pass-1'); await page.fill('#drv-user', 'made'); await page.click('[data-driver-create] button[type=submit]');
   ok(/taken/.test(await text(page, '[data-driver-create] [role=alert]')), 'duplicate username not refused on screen');
 
   // ===== 2. dispatch =====
@@ -373,6 +387,18 @@ for (const w of [320, 390, 768, 1280]) {
   for (const t of ['bookings', 'earnings', 'chat', 'account']) {
     const drv = await shape(MADE, `/driver?tab=${t}`);
     ok(drv.over <= 0, `${w} ${t}: overflows by ${drv.over}px`);
+    if (t === 'account' && w === 390) {
+      const dctx = await b.newContext({ viewport: { width: 390, height: 844 }, storageState: MADE });
+      await dctx.addInitScript(() => { try { sessionStorage.setItem('cahyana_driver_push_later', '1'); } catch {} });
+      const dpg = await dctx.newPage();
+      await dpg.goto(DASH + '/driver?tab=account', { waitUntil: 'networkidle' });
+      await dpg.locator('[data-push-gate]').waitFor({ timeout: 3000 }).then(() => dpg.getByRole('button', { name: /not now/i }).click()).catch(() => {});
+      await dpg.locator('[data-account]').waitFor({ timeout: 6000 }).catch(() => {});
+      ok(await dpg.locator('#pw-cur, #pw-next').count() === 0, 'driver account still has a change-password form');
+      const pr = await dpg.evaluate(async () => (await fetch('/api/driver/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"current":"x","next":"yyyyyyyy"}' })).status);
+      ok(pr === 404, `driver password route answered ${pr}`);
+      await dctx.close();
+    }
     if (t !== 'bookings') continue;
     ok(JSON.stringify(drv.header) === JSON.stringify(own.header), `${w}: header ${JSON.stringify(drv.header)} vs owner ${JSON.stringify(own.header)}`);
     ok(JSON.stringify(drv.logo) === JSON.stringify(own.logo), `${w}: logo ${JSON.stringify(drv.logo)} vs owner ${JSON.stringify(own.logo)}`);

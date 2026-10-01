@@ -18,7 +18,7 @@ const fieldSizes = (page) => page.evaluate(() =>
 
 (async () => {
   await fetch(API + '/admin/drivers', { method: 'POST', headers: { Authorization: BASIC, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'Zoom Test', username: 'zoomy', password: 'zoom-pass-123' }) });
+    body: JSON.stringify({ name: 'Zoom Test', phone: '+62 812 3', username: 'zoomy', password: 'zoom-pass-123' }) });
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
   const errs = [];
 

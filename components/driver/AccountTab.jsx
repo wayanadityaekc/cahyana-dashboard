@@ -1,36 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Bell, KeyRound, LogOut, UserRound } from 'lucide-react';
-import { FIELD_INPUT, FIELD_LABEL } from '@/components/ui/formClasses';
 import Switch from '@/components/ui/Switch';
-import { CARD, STACK, HEAD, NOTE, ERR, OKMSG, BTNS, GHOST, CTA } from '@/components/ui/panelClasses';
-import { getJson, postJson, Unauthorized } from '@/lib/api';
+import { CARD, STACK, HEAD, NOTE, ERR, OKMSG, BTNS, GHOST } from '@/components/ui/panelClasses';
 
 // Account (DASHBOARD BRIEF #7): who is signed in, job alerts on this phone,
-// change password, sign out. The owner made this login; a forgotten password is
-// reset by the owner, not here.
+// sign out. The owner made this login and sets its password; the driver never
+// changes or resets it - a forgotten one is reset by the owner.
 
 const ROW = 'flex items-center justify-between gap-[var(--space-2)] py-[0.6rem]';
 
 export default function AccountTab({ me, push, onExpired, onSignOut }) {
-  const [cur, setCur] = useState('');
-  const [next, setNext] = useState('');
-  const [err, setErr] = useState(null);
-  const [ok, setOk] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const change = async (e) => {
-    e.preventDefault();
-    setBusy(true); setErr(null); setOk('');
-    try {
-      const { status, json } = await postJson('/api/driver/password', { current: cur, next });
-      if (status !== 200) setErr({ field: json.field, text: json.detail || `Server answered ${status}.` });
-      else { setOk('Password changed.'); setCur(''); setNext(''); }
-    } catch (x) { if (x instanceof Unauthorized) onExpired(); else setErr({ text: x.message }); }
-    setBusy(false);
-  };
-
   const env = push.env || {};
   let pushNote = '';
   if (!push.ready) pushNote = 'Checking...';
@@ -66,21 +46,10 @@ export default function AccountTab({ me, push, onExpired, onSignOut }) {
         {push.msg && <p className={OKMSG} role="status">{push.msg}</p>}
       </section>
 
-      <form className={CARD} onSubmit={change} aria-labelledby="acc-pw">
-        <h2 id="acc-pw" className={HEAD}><KeyRound strokeWidth={1.7} aria-hidden="true" />Change password</h2>
-        <div>
-          <label className={FIELD_LABEL} htmlFor="pw-cur">Current password</label>
-          <input id="pw-cur" type="password" className={FIELD_INPUT} value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" required aria-invalid={err && err.field === 'current' ? 'true' : undefined} />
-        </div>
-        <div>
-          <label className={FIELD_LABEL} htmlFor="pw-next">New password</label>
-          <input id="pw-next" type="password" className={FIELD_INPUT} value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={8} required aria-invalid={err && err.field === 'next' ? 'true' : undefined} />
-        </div>
-        <p className={NOTE}>At least 8 characters.</p>
-        {err && <p className={ERR} role="alert">{err.text}</p>}
-        {ok && <p className={OKMSG} role="status">{ok}</p>}
-        <div className={BTNS}><button type="submit" className={CTA} disabled={busy}>Change password</button></div>
-      </form>
+      <section className={CARD} aria-labelledby="acc-pw">
+        <h2 id="acc-pw" className={HEAD}><KeyRound strokeWidth={1.7} aria-hidden="true" />Password</h2>
+        <p className={NOTE}>Cahyana sets your password. To change it or if you forgot it, ask Cahyana.</p>
+      </section>
     </div>
   );
 }

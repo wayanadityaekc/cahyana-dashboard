@@ -9,8 +9,12 @@
 //
 // The two env values are only for Settings > About (DASHBOARD BRIEF #5): when
 // this build was made, and which commit (Vercel sets VERCEL_GIT_COMMIT_SHA).
+// One id per build, identical in the browser bundle and in /api/build.
+const BUILD_ID = process.env.VERCEL_GIT_COMMIT_SHA || `local-${Date.now()}`;
+
 const nextConfig = {
   env: {
+    NEXT_PUBLIC_BUILD_ID: BUILD_ID,
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
     NEXT_PUBLIC_BUILD_SHA: process.env.VERCEL_GIT_COMMIT_SHA || '',
   },

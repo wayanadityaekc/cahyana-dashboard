@@ -70,8 +70,8 @@ function CreateForm({ onCreated, onExpired }) {
           <input id="drv-name" className={FIELD_INPUT} value={f.name} onChange={set('name')} maxLength={80} required aria-invalid={inv('name')} />
         </div>
         <div>
-          <label className={FIELD_LABEL} htmlFor="drv-phone">Phone (optional)</label>
-          <input id="drv-phone" className={FIELD_INPUT} value={f.phone} onChange={set('phone')} maxLength={40} inputMode="tel" />
+          <label className={FIELD_LABEL} htmlFor="drv-phone">Phone</label>
+          <input id="drv-phone" className={FIELD_INPUT} value={f.phone} onChange={set('phone')} maxLength={40} inputMode="tel" required aria-invalid={inv('phone')} />
         </div>
         <div>
           <label className={FIELD_LABEL} htmlFor="drv-user">Username</label>
@@ -79,10 +79,10 @@ function CreateForm({ onCreated, onExpired }) {
         </div>
         <div>
           <label className={FIELD_LABEL} htmlFor="drv-pass">Password</label>
-          <input id="drv-pass" className={FIELD_INPUT} value={f.password} onChange={set('password')} maxLength={128} autoComplete="new-password" placeholder="Leave empty to generate one" aria-invalid={inv('password')} />
+          <input id="drv-pass" className={FIELD_INPUT} value={f.password} onChange={set('password')} maxLength={128} autoComplete="new-password" required aria-invalid={inv('password')} />
         </div>
       </div>
-      <p className={NOTE}>Username: 3-32 letters, numbers, dot, dash or underscore. Password: at least 8 characters.</p>
+      <p className={NOTE}>Username: 3-32 letters, numbers, dot, dash or underscore. Password: at least 8 characters, typed by you. The driver cannot change it.</p>
       {err && <p className={ERR} role="alert">{err.text}</p>}
       <div className={BTNS}>
         <button type="submit" className={CTA} disabled={busy}><UserPlus strokeWidth={1.7} aria-hidden="true" />{busy ? 'Adding' : 'Add driver'}</button>
@@ -138,7 +138,7 @@ function DriverCard({ d, onChanged, onSecret, onExpired }) {
           </div>
           <div>
             <label className={FIELD_LABEL} htmlFor={`ep-${d.id}`}>Phone</label>
-            <input id={`ep-${d.id}`} className={FIELD_INPUT} value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} />
+            <input id={`ep-${d.id}`} className={FIELD_INPUT} value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} inputMode="tel" required />
           </div>
           <div className={BTNS}>
             <button type="submit" className={CTA} disabled={busy}>Save</button>
@@ -148,9 +148,9 @@ function DriverCard({ d, onChanged, onSecret, onExpired }) {
       )}
 
       {mode === 'password' && (
-        <form className="flex flex-col gap-[var(--space-1)]" onSubmit={(e) => { e.preventDefault(); call(`/api/drivers/${d.id}/password`, pw ? { password: pw } : {}, (j) => { setPw(''); onSecret({ who: d.name, username: d.username, password: j.password }); }); }}>
+        <form className="flex flex-col gap-[var(--space-1)]" onSubmit={(e) => { e.preventDefault(); call(`/api/drivers/${d.id}/password`, { password: pw }, (j) => { setPw(''); onSecret({ who: d.name, username: d.username, password: j.password }); }); }}>
           <label className={FIELD_LABEL} htmlFor={`pw-${d.id}`}>New password</label>
-          <input id={`pw-${d.id}`} className={FIELD_INPUT} value={pw} onChange={(e) => setPw(e.target.value)} maxLength={128} autoComplete="new-password" placeholder="Leave empty to generate one" />
+          <input id={`pw-${d.id}`} className={FIELD_INPUT} value={pw} onChange={(e) => setPw(e.target.value)} maxLength={128} autoComplete="new-password" minLength={8} required />
           <p className={NOTE}>{d.name} is signed out on every device and must sign in with the new password.</p>
           <div className={BTNS}>
             <button type="submit" className={CTA} disabled={busy} data-reset-save>Set password</button>

@@ -6,7 +6,7 @@
 // So it caches NOTHING that came from the server. It exists because Chrome will
 // not offer "Add to Home Screen" without a fetch handler, and because a page
 // with no signal should say so.
-const VERSION = 'cahyana-dash-v3';
+const VERSION = 'cahyana-dash-v4';
 const ASSETS = `${VERSION}-assets`;
 const OFFLINE_URL = '/offline';   // a server-rendered route, not a static file - this app is not an export
 

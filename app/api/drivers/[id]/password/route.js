@@ -4,7 +4,7 @@ import { owner, readBody } from '@/lib/passthrough.js';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// New password for one driver (typed by the owner, or generated). Signs the
+// New password for one driver (typed by the owner). Signs the
 // driver out on every device.
 export async function POST(req, { params }) {
   const { id } = await params;

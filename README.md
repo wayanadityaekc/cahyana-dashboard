@@ -355,8 +355,9 @@ node verify-settings.mjs
 Two halves, one app.
 
 **The owner's side** - two new sections in the dashboard:
-- **Drivers**: create a driver (name, phone, username, password - type one or leave it
-  empty to generate). The password is shown ONCE, to hand over in person; the server
+- **Drivers**: create a driver (name, phone, username, password - ALL required;
+  the owner types the password, nothing is generated, and a driver can never change it
+  themselves). The password is shown ONCE, to hand over in person; the server
   only keeps a hash. New password and Deactivate both sign that driver out on every
   device at once. There is no self-signup and no env variable per driver.
 - **Dispatch**: every confirmed (paid / not charged online) booking from today on, not
@@ -434,3 +435,19 @@ Both apply to everything built later, not just what exists today.
 - Checked by `verify-mobile.mjs` (every field on every owner tab, `/login`,
   `/villas` and the driver app at 390/768/1280; drawer and push gate lock and
   release the page).
+
+## "Update available" prompt (DASHBOARD BRIEF #11)
+The installed app (owner dashboard and driver app alike) tells you when a newer version is live.
+- `next.config.mjs` stamps every build with one id (`NEXT_PUBLIC_BUILD_ID` = the Vercel commit sha).
+  `/api/build` answers which build the server is serving now. `components/UpdatePrompt.jsx`,
+  mounted in the root layout, compares the two when the app comes back to the foreground, when it
+  goes back online, and every 5 minutes. Different = a small banner: "Update available. Refresh
+  to get the latest version." Tapping Refresh reloads.
+- It asks instead of reloading by itself: someone halfway through a reply or an edit would lose it.
+- Why not the service worker alone: `public/sw.js` only changes when its own bytes change and a
+  normal deploy leaves them alone, so the browser never reports a new worker. The page's JS is
+  what changes, hence the build id. The worker file is still re-checked on every poll.
+- Dev server has no build id, so the prompt stays off there.
+- Checked by `verify-update.mjs`. One thing it cannot prove: Vercel "skew protection", if turned on
+  for the project, can keep an old tab talking to its own old deployment, in which case /api/build
+  would answer with the old id and no banner would show. Turn it off if the banner never appears.

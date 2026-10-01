@@ -1,6 +1,7 @@
 import './globals.css';
 import './theme.css';
 import PwaRegister from '@/components/PwaRegister';
+import UpdatePrompt from '@/components/UpdatePrompt';
 
 export const metadata = {
   title: 'Cahyana Dashboard',
@@ -46,7 +47,9 @@ export default function RootLayout({ children }) {
           the bar is 65px since it took the site's book-bar paddings. */}
       <body className="max-[993px]:pb-[68px]">
         <PwaRegister />
-        {children}</body>
+        {children}
+        <UpdatePrompt />
+      </body>
     </html>
   );
 }

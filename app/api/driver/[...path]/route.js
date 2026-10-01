@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 // The driver app's pass-through to cahyana-api's /driver/*. Only these names go
 // through - the upstream path is never built from whatever the browser sends.
 const GETS = new Set(['me', 'jobs', 'earnings', 'reviews', 'chat', 'push/config']);
-const POSTS = new Set(['password', 'jobs/respond', 'chat', 'push/status', 'push/subscribe', 'push/unsubscribe', 'push/test']);
+const POSTS = new Set(['jobs/respond', 'chat', 'push/status', 'push/subscribe', 'push/unsubscribe', 'push/test']);
 
 const notFound = () => NextResponse.json({ status: 'error', detail: 'Not found.' }, { status: 404 });
 

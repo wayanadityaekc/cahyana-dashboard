@@ -30,8 +30,8 @@ const db = new pgmod.Pool({ connectionString: PG_URL, ssl: { rejectUnauthorized:
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 
 // ---- fixtures through the real API ----
-const made = (await api('/admin/drivers', { name: 'Made', username: 'made', password: 'made-pass-1' })).json;
-const wayan = (await api('/admin/drivers', { name: 'Wayan', username: 'wayan', password: 'wayan-pass-1' })).json;
+const made = (await api('/admin/drivers', { name: 'Made', phone: '+62 812 1', username: 'made', password: 'made-pass-1' })).json;
+const wayan = (await api('/admin/drivers', { name: 'Wayan', phone: '+62 812 2', username: 'wayan', password: 'wayan-pass-1' })).json;
 const disp = (await api('/admin/dispatch')).json;
 const rowsOf = (ref) => disp.rows.filter((r) => r.ref === ref).map((r) => r.id);
 await api('/admin/dispatch', { rows: rowsOf('CUE-901'), driverId: made.id });
