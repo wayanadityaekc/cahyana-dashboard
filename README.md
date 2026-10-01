@@ -451,3 +451,14 @@ The installed app (owner dashboard and driver app alike) tells you when a newer 
 - Checked by `verify-update.mjs`. One thing it cannot prove: Vercel "skew protection", if turned on
   for the project, can keep an old tab talking to its own old deployment, in which case /api/build
   would answer with the old id and no banner would show. Turn it off if the banner never appears.
+
+## Driver sign-in + past trips in Dispatch (DASHBOARD BRIEF #12)
+- **Driver sign-in** is username, password, Sign in and Install - no title, no sentences, no field labels
+  (placeholders plus aria-labels). Signing in never needs the app installed. **Install**: Android and
+  desktop Chrome get the browser's own one-tap prompt; iPhone gets a popup with the manual steps (iOS has no
+  one-tap install); a browser that offers neither (or a prompt already used) gets the same popup, so the
+  button never does nothing. Hidden once the app is installed. Do not put instructions back on this page.
+- **Dispatch has a "Past trips" filter** (90 days back). Assign, change or clear a driver exactly like an
+  upcoming trip. No alert goes out and the driver has nothing to accept (it is recorded as accepted); it only
+  fixes who drove it. Past lines never count toward "Needs a driver" or the sidebar badge.
+- Checked by `verify-brief12.mjs`.
