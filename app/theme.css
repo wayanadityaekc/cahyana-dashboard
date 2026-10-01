@@ -1,0 +1,28 @@
+/* STYLE C - PORCELAIN (DASHBOARD BRIEF #10 exploration).
+   Warm greige page (#f1f0ee), white pillowy cards with big soft shadows and the
+   roundest corners (18-30px), warm charcoal ink, one muted sage-gray accent for
+   actions. The softest of the three. Loaded after globals.css. */
+:root {
+  --page-bg: #f1f0ee;
+  --color-cream: #f6f5f3;
+  --color-gold: #2a2927;
+  --color-gold-d: #1a1918;
+  --color-green: #66645f;
+  --color-ink: #46443f;
+  --color-muted: #96938c;
+  --color-cta: #5d7168;
+  --color-cta-d: #4b5d55;
+  --color-ok: #4a7d63;
+  --color-err: #a65a50;
+  --line: #e6e4e0;
+  --color-line: #e6e4e0;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 24px; --r-xl: 30px;
+  --shadow-sm: 0 1px 3px rgba(42, 41, 39, 0.06);
+  --shadow-md: 0 8px 28px rgba(42, 41, 39, 0.08);
+  --shadow-lg: 0 14px 40px rgba(42, 41, 39, 0.12);
+  --card-shadow: 0 2px 4px rgba(42, 41, 39, 0.04), 0 12px 32px rgba(42, 41, 39, 0.07);
+  --focus-ring: 0 0 0 3px rgba(93, 113, 104, 0.25);
+}
+@theme { --color-cream: #f6f5f3; --color-gold: #2a2927; --color-green: #66645f; --color-ink: #46443f; --color-muted: #96938c; --color-cta: #5d7168; --color-cta-d: #4b5d55; --color-line: #e6e4e0; }
+html, body { background: var(--page-bg); }
+article, [data-card] { box-shadow: var(--card-shadow); border-color: transparent !important; }
