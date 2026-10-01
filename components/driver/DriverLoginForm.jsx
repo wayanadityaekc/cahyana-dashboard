@@ -1,33 +1,77 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, Share } from 'lucide-react';
-import { FIELD_INPUT, FIELD_LABEL } from '@/components/ui/formClasses';
+import { Download, Share, SquarePlus, X } from 'lucide-react';
+import { FIELD_INPUT } from '@/components/ui/formClasses';
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { pushEnv } from '@/lib/pushClient';
+import useScrollLock from '@/lib/useScrollLock';
 
-// The driver sign-in (DASHBOARD BRIEF #7). Same card as the owner's sign-in.
-// No "create account" and no "forgot password": the owner made this login and
-// is the one who resets it - said on the form so nobody hunts for a link.
+// The driver sign-in (DASHBOARD BRIEF #7, cut down in #12). Username, password,
+// Sign in, Install - and nothing else: no title, no sentences, no field labels
+// (the fields say what they are in their placeholder, and carry aria-labels for
+// screen readers). Same card as the owner's sign-in.
+//
+// Signing in never depends on installing: the form works the same in a tab and
+// in the installed app.
+//
+// Install is one button with two behaviours:
+//   Android / desktop Chrome - the browser's own one-tap install prompt.
+//   iPhone (no such prompt exists) - a popup with the manual steps.
+// Where a browser offers neither (prompt already used, other browsers) the same
+// popup shows the manual steps, so the button never does nothing.
 
 const BOX =
   'max-w-[380px] mx-auto p-[1.6rem] rounded-[var(--r-lg)] bg-white ' +
-  '[border:1px_solid_var(--line)]';
-const TITLE = 'font-head font-medium tracking-[-0.01em] text-h2 text-green m-0 mb-[0.3rem]';
-const SUB = 'font-body text-body text-muted m-0 mb-[var(--space-3)]';
-const ERR = 'font-body text-small text-err m-0 mt-[var(--space-2)]';
+  '[border:1px_solid_var(--line)] flex flex-col gap-[var(--space-2)]';
+const ERR = 'font-body text-small text-err m-0';
 const SUBMIT =
-  `flex w-full mt-[var(--space-3)] ${BTN_SM} bg-cta text-white border-none cursor-pointer ` +
+  `flex w-full ${BTN_SM} bg-cta text-white border-none cursor-pointer ` +
   'disabled:opacity-60 disabled:cursor-not-allowed ' +
   '[transition:background-color_var(--dur)_var(--ease),scale_var(--dur-fast)_var(--ease)] hover:bg-cta-d';
-const INSTALL =
-  'max-w-[380px] mx-auto mt-[var(--space-2)] p-[0.9rem_1rem] rounded-[var(--r-md)] bg-cream ' +
-  '[border:1px_solid_var(--line)] font-body text-small text-green flex gap-[0.6rem] ' +
-  '[&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)] [&>svg]:shrink-0 [&>svg]:mt-[0.1rem]';
 const INSTALL_BTN =
-  `inline-flex ${BTN_SM} mt-[0.5rem] bg-white text-gold [border:1px_solid_var(--line)] cursor-pointer gap-[0.4rem] font-body ` +
+  `flex w-full gap-[0.4rem] ${BTN_SM} bg-white text-gold [border:1px_solid_var(--line)] cursor-pointer font-body ` +
+  '[&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)] ' +
   '[transition:background-color_var(--dur)_var(--ease),scale_var(--dur-fast)_var(--ease)] hover:bg-cream';
+const SHELL = 'fixed inset-0 z-[200] grid place-items-center p-[var(--space-2)] bg-[rgba(26,26,26,0.55)]';
+const SHEET =
+  'relative w-full max-w-[380px] p-[1.6rem] rounded-[var(--r-xl)] bg-white [border:1px_solid_var(--line)] ' +
+  'flex flex-col gap-[var(--space-2)] font-body text-body text-green';
+const STEP = 'flex items-center gap-[0.7rem] m-0 [&>svg]:w-[var(--icon-md)] [&>svg]:h-[var(--icon-md)] [&>svg]:shrink-0 [&>svg]:text-gold';
+const CLOSE =
+  'absolute top-[0.7rem] right-[0.7rem] w-8 h-8 grid place-items-center rounded-[var(--r-md)] bg-transparent border-none ' +
+  'cursor-pointer text-muted hover:bg-cream [&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)]';
+
+function InstallSteps({ ios, onClose }) {
+  const box = useRef(null);
+  useScrollLock(true);
+  useEffect(() => {
+    box.current?.focus();
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className={SHELL} onClick={onClose} data-install-sheet>
+      <div className={SHEET} ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Add to Home Screen" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={CLOSE} onClick={onClose} aria-label="Close"><X strokeWidth={1.7} aria-hidden="true" /></button>
+        {ios ? (
+          <>
+            <p className={STEP}><Share strokeWidth={1.7} aria-hidden="true" />Tap Share in Safari</p>
+            <p className={STEP}><SquarePlus strokeWidth={1.7} aria-hidden="true" />Tap Add to Home Screen</p>
+            <p className={STEP}><Download strokeWidth={1.7} aria-hidden="true" />Open Driver from your Home Screen</p>
+          </>
+        ) : (
+          <>
+            <p className={STEP}><Download strokeWidth={1.7} aria-hidden="true" />Open your browser menu</p>
+            <p className={STEP}><SquarePlus strokeWidth={1.7} aria-hidden="true" />Tap Install app or Add to Home screen</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function DriverLoginForm() {
   const router = useRouter();
@@ -37,6 +81,7 @@ export default function DriverLoginForm() {
   const [err, setErr] = useState('');
   const [env, setEnv] = useState(null);
   const [prompt, setPrompt] = useState(null);
+  const [steps, setSteps] = useState(false);
 
   // Browser-only facts, read after mount.
   useEffect(() => {
@@ -68,44 +113,40 @@ export default function DriverLoginForm() {
     }
   }
 
+  async function install() {
+    // The browser's own prompt where there is one (Android, desktop Chrome)...
+    if (prompt) {
+      const p = prompt;
+      setPrompt(null);                    // a prompt event can be used once
+      p.prompt();
+      await p.userChoice.catch(() => {});
+      return;
+    }
+    // ...the manual steps everywhere else (iPhone has no one-tap install).
+    setSteps(true);
+  }
+
   return (
     <>
       <form className={BOX} onSubmit={submit} data-driver-login>
-        <img src="/logo.webp" alt="The Cahyana Logo" width="1005" height="324" className="h-[34px] w-auto block mb-[var(--space-2)]" />
-        <h1 className={TITLE}>Driver sign in</h1>
-        <p className={SUB}>Use the username and password Cahyana gave you.</p>
-
-        <label className={FIELD_LABEL} htmlFor="drv-user">Username</label>
-        <input id="drv-user" className={FIELD_INPUT} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" required />
-
-        <div className="mt-[var(--space-2)]">
-          <label className={FIELD_LABEL} htmlFor="drv-pass">Password</label>
-          <input id="drv-pass" type="password" className={FIELD_INPUT} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-        </div>
-
+        <img src="/logo.webp" alt="The Cahyana Logo" width="1005" height="324" className="h-[34px] w-auto block self-start" />
+        <input
+          id="drv-user" className={FIELD_INPUT} value={username} onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username" aria-label="Username" autoComplete="username" autoCapitalize="none" required
+        />
+        <input
+          id="drv-pass" type="password" className={FIELD_INPUT} value={password} onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password" aria-label="Password" autoComplete="current-password" required
+        />
         <button type="submit" className={SUBMIT} disabled={busy}>{busy ? 'Signing in...' : 'Sign in'}</button>
         {err && <p className={ERR} role="alert">{err}</p>}
-        <p className="font-body text-small text-muted m-0 mt-[var(--space-2)]">Forgot your password? Ask Cahyana for a new one.</p>
+        {env && !env.installed && (
+          <button type="button" className={INSTALL_BTN} onClick={install} data-install-btn>
+            <Download strokeWidth={1.7} aria-hidden="true" />Install
+          </button>
+        )}
       </form>
-
-      {env && !env.installed && (
-        <div className={INSTALL} data-install-hint>
-          {env.ios ? <Share strokeWidth={1.7} aria-hidden="true" /> : <Download strokeWidth={1.7} aria-hidden="true" />}
-          <div>
-            <strong>Put this app on your Home Screen.</strong>{' '}
-            {env.ios
-              ? 'In Safari tap Share, then "Add to Home Screen", and open it from there. Job alerts only work that way on iPhone.'
-              : 'It opens like an app and gets job alerts.'}
-            {prompt && (
-              <div>
-                <button type="button" className={INSTALL_BTN} onClick={async () => { prompt.prompt(); await prompt.userChoice.catch(() => {}); setPrompt(null); }} data-install-btn>
-                  <Download strokeWidth={1.7} aria-hidden="true" className="w-[var(--icon-sm)] h-[var(--icon-sm)]" />Install app
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {steps && <InstallSteps ios={!!(env && env.ios)} onClose={() => setSteps(false)} />}
     </>
   );
 }

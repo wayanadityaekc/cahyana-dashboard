@@ -68,7 +68,7 @@ const watch = (page, tag) => page.on('pageerror', (e) => errs.push(`${tag}: ${e.
   const own = await (await fetch(DASH + '/manifest.webmanifest')).json().catch(() => null);
   ok(own && own.start_url === '/' && own.name === 'Cahyana Dashboard', 'owner manifest changed or unreachable signed out');
   for (const p of man ? man.icons.map((i) => i.src) : []) ok((await fetch(DASH + p)).status === 200, `icon ${p} not reachable signed out`);
-  ok(await page.locator('[data-install-hint]').count() === 1, 'no Home Screen hint on the sign-in page');
+  ok(await page.locator('[data-install-btn]').count() === 1, 'no Install button on the sign-in page');
   // wrong password: the API's one answer
   await page.fill('#drv-user', 'nobody'); await page.fill('#drv-pass', 'whatever-123'); await page.click('button[type=submit]');
   await page.locator('[data-driver-login] [role=alert]').waitFor({ timeout: 8000 }).catch(() => {});

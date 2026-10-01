@@ -139,7 +139,8 @@ export default function Dashboard({ demo = false }) {
         const c = await getJson('/api/driver-chats');
         if (alive) setDriverUnread((c.threads || []).reduce((s, t) => s + (t.unread || 0), 0));
         const d = await getJson('/api/dispatch');
-        const refs = new Set((d.rows || []).filter((r) => !r.driverId).map((r) => r.ref || r.id));
+        // Past trips can be assigned too (#12) but never count as 'needs a driver'.
+        const refs = new Set((d.rows || []).filter((r) => !r.driverId && !r.past).map((r) => r.ref || r.id));
         if (alive) setNeedDriver(refs.size);
       } catch (e) { if (e instanceof Unauthorized) expired(); }
     };

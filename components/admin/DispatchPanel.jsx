@@ -16,6 +16,11 @@ import { fmtTime } from '@/lib/time';
 // today or later, not a villa stay. An unpaid booking never shows up here, so
 // it can never reach a driver.
 //
+// PAST TRIPS (DASHBOARD BRIEF #12): a trip that already happened takes a driver
+// the same way - assign, change or clear - under its own "Past trips" filter. No
+// alert goes to the driver and there is nothing for them to accept; it only fixes
+// who drove it (their earnings, their rating). Past lines never count as "needs a driver".
+//
 // A booking is several rows (one per day/item). The usual case is one driver
 // for the whole booking, so that is the big control on each card; a single day
 // can still go to someone else from its own line.
@@ -62,7 +67,7 @@ function groupRows(rows) {
   }));
 }
 
-function GroupCard({ g, drivers, onAssign, busy }) {
+function GroupCard({ g, drivers, onAssign, busy, past }) {
   const assigned = new Set(g.rows.map((r) => r.driverId || 0));
   const common = assigned.size === 1 ? [...assigned][0] : '';
   const [pick, setPick] = useState(common ? String(common) : '');
@@ -71,9 +76,10 @@ function GroupCard({ g, drivers, onAssign, busy }) {
   const many = g.rows.length > 1;
 
   return (
-    <article className={CARD} data-dispatch-group={g.ref || g.key}>
+    <article className={CARD} data-dispatch-group={g.ref || g.key} data-past={past ? '1' : undefined}>
       <div className="flex flex-wrap items-baseline gap-x-[0.6rem] gap-y-[0.2rem]">
         <h3 className={H3}>{g.ref || 'No ref'}</h3>
+        {past && <span className={`${PILL} ${PILL_WAIT}`} data-past-tag>Past</span>}
         <span className={BODY}>{g.name}{g.guests ? ` - ${g.guests} guest${Number(g.guests) > 1 ? 's' : ''}` : ''}</span>
         {g.phone && <span className={SMALL}>{g.phone}</span>}
       </div>
@@ -83,7 +89,7 @@ function GroupCard({ g, drivers, onAssign, busy }) {
           const st = statusOf(r);
           return (
             <div key={r.id} className={LINE} data-dispatch-row={r.id}>
-              <span className={WHEN}>{dayLabel(r.date)}{r.time ? ` - ${fmtTime(r.time)}` : ''}</span>
+              <span className={WHEN}>{dayLabel(r.date, past)}{r.time ? ` - ${fmtTime(r.time)}` : ''}</span>
               <span className={WHAT}>{r.service || r.type || 'Booking'}</span>
               {r.pickup && <span className={SMALL}>from {r.pickup}</span>}
               {r.dropoff && <span className={SMALL}>to {r.dropoff}</span>}
@@ -93,7 +99,7 @@ function GroupCard({ g, drivers, onAssign, busy }) {
               {many && (
                 <select
                   className={LINE_SELECT}
-                  aria-label={`Driver for ${dayLabel(r.date)}`}
+                  aria-label={`Driver for ${dayLabel(r.date, past)}`}
                   value={r.driverId ? String(r.driverId) : ''}
                   disabled={busy}
                   onChange={(e) => onAssign([r.id], e.target.value || null)}
@@ -144,7 +150,7 @@ export default function DispatchPanel({ onExpired, onGoDrivers }) {
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
-  const [filter, setFilter] = useState('open');
+  const [filter, setFilter] = useState('open');   // open | all | past
 
   const load = useCallback(async () => {
     setErr('');
@@ -154,12 +160,15 @@ export default function DispatchPanel({ onExpired, onGoDrivers }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const groups = useMemo(() => (data ? groupRows(data.rows || []) : []), [data]);
+  const groups = useMemo(() => (data ? groupRows((data.rows || []).filter((r) => !r.past)) : []), [data]);
+  const pastGroups = useMemo(() => (data ? groupRows((data.rows || []).filter((r) => r.past)) : []), [data]);
   const open = groups.filter((g) => g.open);
-  const shown = (filter === 'open' ? open : groups)
-    .slice().sort((a, b) => (b.open - a.open) || String(a.first).localeCompare(String(b.first)));
+  const shown = filter === 'past'
+    ? pastGroups.slice().sort((a, b) => String(b.first).localeCompare(String(a.first)))
+    : (filter === 'open' ? open : groups)
+      .slice().sort((a, b) => (b.open - a.open) || String(a.first).localeCompare(String(b.first)));
 
-  const assign = async (rows, driverId, note) => {
+  const assign = async (rows, driverId, note, past) => {
     setBusy(true); setErr(''); setMsg('');
     try {
       const body = { rows, driverId: driverId ? Number(driverId) : null };
@@ -168,7 +177,8 @@ export default function DispatchPanel({ onExpired, onGoDrivers }) {
       if (status !== 200) setErr(json.detail || `Server answered ${status}.`);
       else {
         const who = driverId ? (data.drivers.find((d) => String(d.id) === String(driverId)) || {}).name : null;
-        setMsg(who ? `Sent to ${who}. They get a notification and can accept or decline.` : 'Saved - back in Unassigned.');
+        if (past) setMsg(who ? `${who} is now on that past trip. No alert was sent.` : 'Saved - no driver on that past trip.');
+        else setMsg(who ? `Sent to ${who}. They get a notification and can accept or decline.` : 'Saved - back in Unassigned.');
         await load();
       }
     } catch (e) { if (e instanceof Unauthorized) onExpired(); else setErr(e.message || 'Could not save that.'); }
@@ -198,6 +208,9 @@ export default function DispatchPanel({ onExpired, onGoDrivers }) {
         <button type="button" className={chip(filter === 'all')} onClick={() => setFilter('all')} aria-pressed={filter === 'all'} data-filter="all">
           All upcoming <span className="tabular-nums">{groups.length}</span>
         </button>
+        <button type="button" className={chip(filter === 'past')} onClick={() => setFilter('past')} aria-pressed={filter === 'past'} data-filter="past">
+          Past trips <span className="tabular-nums">{pastGroups.length}</span>
+        </button>
         <button type="button" className={`${GHOST} ml-auto`} onClick={load} disabled={busy}>
           <RefreshCw strokeWidth={1.7} aria-hidden="true" />Refresh
         </button>
@@ -208,15 +221,15 @@ export default function DispatchPanel({ onExpired, onGoDrivers }) {
 
       {shown.length === 0 && (
         <p className={EMPTY} data-dispatch-empty>
-          {filter === 'open' ? 'Every upcoming booking has a driver.' : 'No confirmed bookings coming up.'}
+          {filter === 'open' ? 'Every upcoming booking has a driver.' : filter === 'past' ? 'No confirmed trips in the last 90 days.' : 'No confirmed bookings coming up.'}
         </p>
       )}
       {shown.map((g) => (
-        <GroupCard key={`${g.key}:${g.rows.map((r) => `${r.driverId}-${r.note}`).join('|')}`} g={g} drivers={data.drivers || []} onAssign={assign} busy={busy} />
+        <GroupCard key={`${filter}:${g.key}:${g.rows.map((r) => `${r.driverId}-${r.note}`).join('|')}`} g={g} drivers={data.drivers || []} onAssign={(rows, d, n) => assign(rows, d, n, filter === 'past')} busy={busy} past={filter === 'past'} />
       ))}
 
       <p className={NOTE}>
-        Only confirmed bookings appear here (paid, or not charged online). Unpaid bookings never reach a driver.
+        Only confirmed bookings appear here (paid, or not charged online). Unpaid bookings never reach a driver. Past trips go back 90 days.
       </p>
     </div>
   );
