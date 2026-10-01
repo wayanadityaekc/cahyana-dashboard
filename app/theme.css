@@ -1,0 +1,28 @@
+/* STYLE A - MIST (DASHBOARD BRIEF #10 exploration).
+   Cool light-gray page, white cards that lift off it with a soft shadow, blue-gray
+   ink, one subtle steel-blue accent for actions. Soft 14-24px corners. Loaded after
+   globals.css so these tokens win; nothing else in the code changes. */
+:root {
+  --page-bg: #eceef1;
+  --color-cream: #f4f5f7;
+  --color-gold: #1d232b;
+  --color-gold-d: #11161c;
+  --color-green: #55606d;
+  --color-ink: #3a444f;
+  --color-muted: #8a94a0;
+  --color-cta: #44586e;
+  --color-cta-d: #35465a;
+  --color-ok: #3f7d63;
+  --color-err: #a2504a;
+  --line: #dfe3e8;
+  --color-line: #dfe3e8;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 26px;
+  --shadow-sm: 0 1px 2px rgba(29, 35, 43, 0.06);
+  --shadow-md: 0 4px 16px rgba(29, 35, 43, 0.07);
+  --shadow-lg: 0 10px 28px rgba(29, 35, 43, 0.10);
+  --card-shadow: 0 1px 3px rgba(29, 35, 43, 0.06), 0 6px 18px rgba(29, 35, 43, 0.05);
+  --focus-ring: 0 0 0 3px rgba(68, 88, 110, 0.22);
+}
+@theme { --color-cream: #f4f5f7; --color-gold: #1d232b; --color-green: #55606d; --color-ink: #3a444f; --color-muted: #8a94a0; --color-cta: #44586e; --color-cta-d: #35465a; --color-line: #dfe3e8; }
+html, body { background: var(--page-bg); }
+article, [data-card] { box-shadow: var(--card-shadow); border-color: transparent !important; }
