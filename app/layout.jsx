@@ -1,6 +1,5 @@
 import './globals.css';
 import './theme.css';
-import './theme.css';
 import PwaRegister from '@/components/PwaRegister';
 
 export const metadata = {
