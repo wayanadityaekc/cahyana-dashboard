@@ -462,3 +462,12 @@ The installed app (owner dashboard and driver app alike) tells you when a newer 
   upcoming trip. No alert goes out and the driver has nothing to accept (it is recorded as accepted); it only
   fixes who drove it. Past lines never count toward "Needs a driver" or the sidebar badge.
 - Checked by `verify-brief12.mjs`.
+
+## Share a driver's login (DASHBOARD BRIEF #12)
+Drivers > **Share** (on the green "new password" panel and on every driver card) opens the phone's own share
+sheet with plain text: the driver app link (`<this address>/driver`), the username and the password. Where
+there is no share sheet (desktop) it copies the same text instead and says so. Closing the sheet is not an error.
+- The password is only known right after it is typed or set: the server keeps a hash, so it can never be read
+  back. The card remembers it in memory for that page session only; after a reload the card's Share sends the
+  link and username and says the password is not stored (set a new one to include it).
+- Checked by `verify-brief12.mjs` (part 3).

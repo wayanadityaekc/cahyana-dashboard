@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Copy, KeyRound, Power, UserPlus, Pencil } from 'lucide-react';
+import { Copy, KeyRound, Power, Share2, UserPlus, Pencil } from 'lucide-react';
 import { FIELD_INPUT, FIELD_LABEL } from '@/components/ui/formClasses';
 import {
   CARD, STACK, HEAD, H3, NOTE, ERR, EMPTY, BTNS, GHOST, CTA, DANGER,
   PILL, PILL_OK, PILL_BAD,
 } from '@/components/ui/panelClasses';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
+import { shareLogin } from '@/lib/shareLogin';
 
 // Drivers (DASHBOARD BRIEF #7): the owner creates every driver login by hand.
 // No self-signup, no env variables. The password is typed here or generated,
@@ -20,8 +21,11 @@ const SECRET =
   '[border:1px_solid_var(--color-ok)]';
 const CODE = 'font-mono text-[0.95rem] font-semibold text-green tracking-[0.04em] select-all';
 
+const SHARE_NOTE = { copied: 'Copied to the clipboard', failed: 'Could not share - copy it by hand' };
+
 function Secret({ who, username, password, onDone }) {
   const [copied, setCopied] = useState(false);
+  const [shareMsg, setShareMsg] = useState('');
   const copy = async () => {
     try { await navigator.clipboard.writeText(`Username: ${username}\nPassword: ${password}`); setCopied(true); }
     catch { /* the text is selectable either way */ }
@@ -30,12 +34,16 @@ function Secret({ who, username, password, onDone }) {
     <div className={SECRET} role="status" data-new-password>
       <div className="flex-1 min-w-[200px]">
         <p className={NOTE}>Give this to {who} now. It will not be shown again.</p>
+        {shareMsg && <p className={NOTE} role="status" data-share-msg>{shareMsg}</p>}
         <p className="font-body text-body text-green m-0 mt-[0.2rem]">
           Username <span className={CODE} data-secret-user>{username}</span>
           {'  '}Password <span className={CODE} data-secret-pass>{password}</span>
         </p>
       </div>
       <div className={BTNS}>
+        <button type="button" className={GHOST} onClick={async () => setShareMsg(SHARE_NOTE[await shareLogin({ name: who, username, password })] || '')} data-share-secret>
+          <Share2 strokeWidth={1.7} aria-hidden="true" />Share
+        </button>
         <button type="button" className={GHOST} onClick={copy}><Copy strokeWidth={1.7} aria-hidden="true" />{copied ? 'Copied' : 'Copy'}</button>
         <button type="button" className={GHOST} onClick={onDone}>Done</button>
       </div>
@@ -91,7 +99,8 @@ function CreateForm({ onCreated, onExpired }) {
   );
 }
 
-function DriverCard({ d, onChanged, onSecret, onExpired }) {
+function DriverCard({ d, onChanged, onSecret, onExpired, knownPw }) {
+  const [shareMsg, setShareMsg] = useState('');
   const [mode, setMode] = useState(null); // null | 'edit' | 'password'
   const [name, setName] = useState(d.name);
   const [phone, setPhone] = useState(d.phone || '');
@@ -160,10 +169,20 @@ function DriverCard({ d, onChanged, onSecret, onExpired }) {
       )}
 
       {err && <p className={ERR} role="alert">{err}</p>}
+      {shareMsg && <p className={NOTE} role="status" data-share-msg>{shareMsg}</p>}
 
       {!mode && (
         <div className={BTNS}>
           <button type="button" className={GHOST} onClick={() => setMode('edit')}><Pencil strokeWidth={1.7} aria-hidden="true" />Edit</button>
+          <button
+            type="button" className={GHOST} data-share-driver
+            onClick={async () => {
+              const r = await shareLogin({ name: d.name, username: d.username, password: knownPw });
+              setShareMsg(SHARE_NOTE[r] || (!knownPw && r === 'shared' ? 'Sent the link and username only. The password is never stored: set a new one to include it.' : ''));
+            }}
+          >
+            <Share2 strokeWidth={1.7} aria-hidden="true" />Share
+          </button>
           <button type="button" className={GHOST} onClick={() => setMode('password')} data-reset><KeyRound strokeWidth={1.7} aria-hidden="true" />New password</button>
           <button type="button" className={d.active ? DANGER : GHOST} onClick={toggle} disabled={busy} data-toggle-active>
             <Power strokeWidth={1.7} aria-hidden="true" />{d.active ? 'Deactivate' : 'Reactivate'}
@@ -177,7 +196,14 @@ function DriverCard({ d, onChanged, onSecret, onExpired }) {
 export default function DriversPanel({ onExpired }) {
   const [list, setList] = useState(null);
   const [err, setErr] = useState('');
-  const [secret, setSecret] = useState(null);
+  const [secret, setSecretRaw] = useState(null);
+  // Passwords the owner typed or set in THIS page session, kept in memory only so the
+  // card's Share can include them. Gone on reload - the server never stores them.
+  const [known, setKnown] = useState({});
+  const setSecret = (s) => {
+    setSecretRaw(s);
+    if (s && s.username && s.password) setKnown((k) => ({ ...k, [s.username]: s.password }));
+  };
 
   const load = useCallback(async () => {
     try { setList((await getJson('/api/drivers')).drivers || []); }
@@ -194,7 +220,7 @@ export default function DriversPanel({ onExpired }) {
       {!list && !err && <p className={EMPTY}>Loading drivers...</p>}
       {list && list.length === 0 && <p className={EMPTY}>No drivers yet. Add the first one above.</p>}
       {list && list.map((d) => (
-        <DriverCard key={`${d.id}:${d.active}:${d.name}:${d.phone}`} d={d} onChanged={load} onSecret={setSecret} onExpired={onExpired} />
+        <DriverCard key={`${d.id}:${d.active}:${d.name}:${d.phone}`} d={d} onChanged={load} onSecret={setSecret} onExpired={onExpired} knownPw={known[d.username]} />
       ))}
       {list && list.length > 0 && (
         <p className={NOTE}>

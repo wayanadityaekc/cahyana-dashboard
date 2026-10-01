@@ -131,6 +131,7 @@ for (const w of [390, 1280]) {
   const msg = await page.locator('[role=status]').first().innerText().catch(() => '');
   ok(/No alert was sent/.test(msg), `past assign message "${msg}"`);
   const card2 = page.locator('[data-dispatch-group="CUE-904"]');
+  await page.waitForFunction(() => /accepted - made past/i.test(document.querySelector('[data-dispatch-group="CUE-904"] [data-row-status]')?.innerText || ''), null, { timeout: 5000 }).catch(() => {});
   ok(/accepted - made past/i.test(await card2.locator('[data-row-status]').first().innerText()), 'past trip is not marked Accepted for the driver');
   // change it, then clear it
   const w = await card2.locator('[data-group-driver] option', { hasText: 'Made Wirawan' }).count();
@@ -145,6 +146,70 @@ for (const w of [390, 1280]) {
   const nOpen = Number((needBefore.match(/(\d+)\s*$/) || [])[1]);
   const nBadge = Number((badge.match(/(\d+)\s*$/) || [])[1]);
   ok(nOpen > 0 && nBadge === nOpen, `sidebar badge ${nBadge} vs Needs a driver ${nOpen}`);
+  await ctx.close();
+}
+// ===== Part 3: Share a driver's login =====
+{
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await ctx.addInitScript(() => {
+    window.__shared = [];
+    window.__shareMode = 'ok';
+    navigator.share = async (d) => {
+      if (window.__shareMode === 'cancel') { const e = new Error('x'); e.name = 'AbortError'; throw e; }
+      window.__shared.push(d);
+    };
+    window.__clip = [];
+    try { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { window.__clip.push(t); } } }); } catch {}
+  });
+  const page = await ctx.newPage();
+  await page.goto(DASH + '/login', { waitUntil: 'networkidle' });
+  await page.fill('#adm-user', 'owner'); await page.fill('#adm-pass', 'pw'); await page.click('button[type=submit]');
+  await page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 10000 });
+  await page.goto(DASH + '/cue?tab=drivers', { waitUntil: 'networkidle' });
+  await page.locator('[data-driver-create]').waitFor({ timeout: 8000 });
+  await page.fill('#drv-name', 'Share Tester'); await page.fill('#drv-phone', '+62 8 99'); await page.fill('#drv-user', 'sharer'); await page.fill('#drv-pass', 'share-pass-123');
+  await page.click('[data-driver-create] button[type=submit]');
+  await page.locator('[data-new-password]').waitFor({ timeout: 8000 });
+  const origin = new URL(page.url()).origin;
+  const last = () => page.evaluate(() => window.__shared[window.__shared.length - 1] || null);
+  // 1. right after creating
+  await page.click('[data-share-secret]'); await sleep(300);
+  let d = await last();
+  ok(d && d.text === `Cahyana driver app\nLink: ${origin}/driver\nUsername: sharer\nPassword: share-pass-123`, `share after create: ${JSON.stringify(d)}`);
+  ok(d && /Share Tester/.test(d.title || ''), 'share title lacks the driver name');
+  await page.locator('[data-new-password] button', { hasText: 'Done' }).click();
+  // 2. from the card, same page session: password still known
+  const card = page.locator('[data-driver="sharer"]');
+  await card.locator('[data-share-driver]').click(); await sleep(300);
+  d = await last();
+  ok(d && /Password: share-pass-123/.test(d.text) && /Username: sharer/.test(d.text), `card share: ${JSON.stringify(d)}`);
+  ok(await card.locator('[data-share-msg]').count() === 0, 'a successful share printed a message');
+  // 3. after a reload the password is gone: link + username only, and it says so
+  await page.goto(DASH + '/cue?tab=drivers', { waitUntil: 'networkidle' });
+  await page.locator('[data-driver="sharer"]').waitFor({ timeout: 8000 });
+  await page.locator('[data-driver="sharer"] [data-share-driver]').click(); await sleep(300);
+  d = await last();
+  ok(d && !/Password/.test(d.text) && /Username: sharer/.test(d.text) && d.text.includes(origin + '/driver'), `reloaded share: ${JSON.stringify(d)}`);
+  ok(/never stored/.test(await page.locator('[data-driver="sharer"] [data-share-msg]').innerText().catch(() => '')), 'no note that the password was left out');
+  // 4. set a new password -> the card can share that one
+  await page.locator('[data-driver="sharer"] [data-reset]').click();
+  const pwInput = page.locator('[data-driver="sharer"] input[autocomplete="new-password"]');
+  await pwInput.fill('brand-new-pass-9'); await page.locator('[data-reset-save]').click();
+  await page.locator('[data-new-password]').waitFor({ timeout: 8000 });
+  await page.click('[data-share-secret]'); await sleep(300);
+  d = await last();
+  ok(d && /Password: brand-new-pass-9/.test(d.text), `share after reset: ${JSON.stringify(d)}`);
+  // 5. closing the share sheet is not an error
+  await page.evaluate(() => { window.__shareMode = 'cancel'; });
+  const n = await page.evaluate(() => window.__shared.length);
+  await page.click('[data-share-secret]'); await sleep(300);
+  ok(await page.evaluate(() => window.__shared.length) === n && await page.locator('[data-new-password] [data-share-msg]').count() === 0, 'cancelling the share sheet showed a message or shared anyway');
+  // 6. no share sheet (desktop): copies instead and says so
+  await page.evaluate(() => { delete navigator.share; Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); });
+  await page.click('[data-share-secret]'); await sleep(300);
+  ok(/Password: brand-new-pass-9/.test(await page.evaluate(() => window.__clip.slice(-1)[0] || '')), 'no share sheet: nothing was copied');
+  ok(/Copied/.test(await page.locator('[data-new-password] [data-share-msg]').first().innerText().catch(() => '')), 'no share sheet: no "Copied" note');
+  ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 0, 'drivers page grew sideways');
   await ctx.close();
 }
 await b.close();
