@@ -349,3 +349,41 @@ DEMO_ENABLED=true DEMO_USER=demo DEMO_PASS=demo npx next start -p 3100
 (cd ../CUE && node tools/serve-out.js)                       # port 4000
 node verify-settings.mjs
 ```
+
+## Drivers + dispatch (DASHBOARD BRIEF #7)
+
+Two halves, one app.
+
+**The owner's side** - two new sections in the dashboard:
+- **Drivers**: create a driver (name, phone, username, password - type one or leave it
+  empty to generate). The password is shown ONCE, to hand over in person; the server
+  only keeps a hash. New password and Deactivate both sign that driver out on every
+  device at once. There is no self-signup and no env variable per driver.
+- **Dispatch**: every confirmed (paid / not charged online) booking from today on, not
+  villa stays. "Needs a driver" first. One driver for the whole booking plus a note, or
+  a different driver per day from the line's own picker. A driver's decline puts the line
+  back here marked "Declined by X", and emails + pushes you.
+- Booking cards now say who drives each line, and whether they accepted.
+- Chat has a **Guests | Drivers** switch; each driver has one private thread with you.
+
+**The driver app** - `/driver`, same address:
+- Its own install: `/driver.webmanifest` (name "Cahyana Driver", green tile, opens on
+  `/driver`) - a phone can carry both apps. Its own httpOnly cookie (`cue_driver`): the
+  owner's cookie does not open `/driver`, a driver's does not open `/`.
+- Signed out it shows only the sign-in form and how to add it to the Home Screen.
+- Tabs: **Bookings** (only their jobs; first name + last initial, phone, pickup, time,
+  guests, flight, your note - never the guest's email or price; Accept / Decline),
+  **Earnings** (12-month bar chart + month list; full program price, earned once the
+  date has passed), **Chat** (with you only), **Account** (job alerts, password, sign out).
+- **Job alerts are pushed hard**: until the phone has push on, a full-screen prompt
+  greets every app launch, and a red reminder sits on every tab. On iPhone it explains
+  Add to Home Screen first, since iOS only allows push there.
+
+### Verifying it
+```
+cd ../cahyana-api && PUSH_LOG=/tmp/p.jsonl node tools/driver-dev-server.js     # real Postgres, port 4598
+CAHYANA_API=http://127.0.0.1:4598/api npx next start -p 3102
+PUSH_LOG=/tmp/p.jsonl node verify-driver.mjs
+```
+Restart both before each run. The look is measured against the owner's dashboard in
+the same browser (header, logo, h1, tab bar, rail), at 320 / 390 / 768 / 1280.

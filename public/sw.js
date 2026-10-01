@@ -6,7 +6,7 @@
 // So it caches NOTHING that came from the server. It exists because Chrome will
 // not offer "Add to Home Screen" without a fetch handler, and because a page
 // with no signal should say so.
-const VERSION = 'cahyana-dash-v2';
+const VERSION = 'cahyana-dash-v3';
 const ASSETS = `${VERSION}-assets`;
 const OFFLINE_URL = '/offline';   // a server-rendered route, not a static file - this app is not an export
 
@@ -53,20 +53,31 @@ self.addEventListener('fetch', (e) => {
 // The payload is built by cahyana-api/push.js: { title, body, tab, tag }. Only
 // a booking ref and a tour name ever reach the lock screen. The icon is the
 // Lucide bell, the same glyph as the Settings row (tools/make-bell-icons.js).
-const SECTIONS = new Set(['attention', 'upcoming', 'past', 'undated', 'prices', 'promo', 'content', 'reviews', 'chat', 'settings']);
+const SECTIONS = new Set(['attention', 'upcoming', 'past', 'undated', 'dispatch', 'drivers', 'prices', 'promo', 'content', 'reviews', 'chat', 'settings']);
+// The driver app's tabs (DASHBOARD BRIEF #7). A driver push carries
+// url "/driver?tab=<tab>"; only these four tabs are honoured.
+const DRIVER_TABS = new Set(['bookings', 'earnings', 'chat', 'account']);
+
+function targetOf(p) {
+  const m = typeof p.url === 'string' && p.url.match(/^\/driver\?tab=([a-z]+)$/);
+  if (m) return DRIVER_TABS.has(m[1]) ? `/driver?tab=${m[1]}` : '/driver';
+  const tab = SECTIONS.has(p.tab) ? p.tab : '';
+  return tab ? `/?tab=${tab}` : '/';
+}
 
 self.addEventListener('push', (e) => {
   let p = {};
   try { p = e.data ? e.data.json() : {}; } catch { p = { body: e.data ? e.data.text() : '' }; }
-  const tab = SECTIONS.has(p.tab) ? p.tab : '';
-  e.waitUntil(self.registration.showNotification(p.title || 'Cahyana dashboard', {
+  const url = targetOf(p);
+  const driver = url.startsWith('/driver');
+  e.waitUntil(self.registration.showNotification(p.title || (driver ? 'Cahyana driver' : 'Cahyana dashboard'), {
     body: p.body || '',
-    icon: '/icons/bell-192.png',
+    icon: driver ? '/icons/driver-icon-192.png' : '/icons/bell-192.png',
     badge: '/icons/bell-badge-96.png',
     // Same kind replaces the last one instead of stacking ten "Chat" banners.
     tag: p.tag || 'dashboard',
     renotify: true,
-    data: { url: tab ? `/?tab=${tab}` : '/' },
+    data: { url },
   }));
 });
 
@@ -77,8 +88,11 @@ self.addEventListener('notificationclick', (e) => {
   const url = (e.notification.data && e.notification.data.url) || '/';
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const wantDriver = url.startsWith('/driver');
     for (const w of wins) {
-      if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+      const u = new URL(w.url);
+      const isDriver = u.pathname === '/driver' || u.pathname.startsWith('/driver/');
+      if (u.origin === self.location.origin && isDriver === wantDriver && 'focus' in w) {
         await w.focus();
         if ('navigate' in w) return w.navigate(url);
         return undefined;

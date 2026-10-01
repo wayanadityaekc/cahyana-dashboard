@@ -5,6 +5,8 @@ import { Bell, ExternalLink, LogOut, ShieldAlert, UserRound } from 'lucide-react
 import { BTN_SM } from '@/components/ui/btnClasses';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
 import { SITE_URL } from '@/components/Navbar';
+import Switch from '@/components/ui/Switch';
+import { urlB64ToUint8Array, deviceLabel } from '@/lib/pushClient';
 
 // Settings (DASHBOARD BRIEF #4/#5): account, push notifications, about.
 //
@@ -42,43 +44,6 @@ const DANGER =
   `inline-flex ${BTN_SM} gap-[0.4rem] font-body bg-white text-err [border:1px_solid_var(--line)] cursor-pointer ` +
   '[&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)] [&>svg]:shrink-0 hover:bg-cream';
 const LINK = 'inline-flex items-center gap-[0.4rem] font-body text-body text-gold no-underline hover:underline [&>svg]:w-[var(--icon-sm)] [&>svg]:h-[var(--icon-sm)]';
-
-// The public site's switch (TransferPicker's return toggle), same string: a
-// hidden checkbox + a pill track whose knob follows peer-checked.
-function Switch({ checked, onChange, disabled, label, id }) {
-  return (
-    <label className={`flex items-center gap-2 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} htmlFor={id}>
-      <input
-        id={id}
-        type="checkbox"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        className="peer absolute opacity-0 w-0 h-0"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span className="w-10 h-[23px] rounded-pill bg-line relative shrink-0 transition-[background] duration-200 peer-checked:bg-gold peer-focus-visible:[box-shadow:var(--focus-ring)] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:w-[17px] after:h-[17px] after:rounded-[50%] after:bg-white after:transition-[left] after:duration-200 peer-checked:after:left-[20px]" />
-    </label>
-  );
-}
-
-function urlB64ToUint8Array(s) {
-  const pad = '='.repeat((4 - (s.length % 4)) % 4);
-  const b64 = (s + pad).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = atob(b64);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
-}
-
-function deviceLabel() {
-  const ua = navigator.userAgent || '';
-  if (/iPhone|iPad/.test(ua)) return 'iPhone / iPad';
-  if (/Android/.test(ua)) return 'Android';
-  if (/Mac/.test(ua)) return 'Mac';
-  if (/Windows/.test(ua)) return 'Windows';
-  return 'Browser';
-}
 
 const fmtDate = (iso) => {
   if (!iso) return '';

@@ -14,13 +14,22 @@
 // themselves, usually onto black, and round the corners for you.
 //
 //   node tools/make-icons.js ../CUE/public/assets/icons/icon-512.png
+//   node tools/make-icons.js ../CUE/public/assets/icons/icon-512.png --driver
+//
+// --driver (DASHBOARD BRIEF #7): the driver app's tiles, prefixed "driver-", on
+// the brand CTA green (--color-cta, #3d5c46). Wayan has BOTH apps on one phone;
+// a third colour that already exists keeps the three tiles telling apart.
 //
 // Not a CI gate. Run it by hand if the logo ever changes, then commit the output.
 const sharp = require('sharp');
 const path = require('path');
 
-const TILE = [0x22, 0x20, 0x1c];   // --color-gold, the brand's soft black
+const DRIVER = process.argv.includes('--driver');
+const TILE = DRIVER
+  ? [0x3d, 0x5c, 0x46]               // --color-cta, the brand green (driver app)
+  : [0x22, 0x20, 0x1c];              // --color-gold, the brand's soft black
 const OUT = path.join(__dirname, '..', 'public', 'icons');
+const PREFIX = DRIVER ? 'driver-' : '';
 const SIZES = [
   ['icon-512.png', 512],
   ['icon-192.png', 192],
@@ -46,8 +55,8 @@ async function main() {
   for (const [name, size] of SIZES) {
     await base.clone().resize(size, size, { kernel: 'lanczos3' })
       .png({ palette: true, colours: 16 })        // two colours in, so a palette is exact and small
-      .toFile(path.join(OUT, name));
-    console.log(`${name}  ${size}x${size}`);
+      .toFile(path.join(OUT, PREFIX + name));
+    console.log(`${PREFIX}${name}  ${size}x${size}`);
   }
 }
 

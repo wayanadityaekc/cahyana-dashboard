@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star, Bell } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star, Bell, Truck, Users } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import Navbar from '@/components/Navbar';
@@ -17,6 +17,9 @@ import ContentPanel from '@/components/admin/ContentPanel';
 import ReviewsPanel from '@/components/admin/ReviewsPanel';
 import ChatPanel from '@/components/admin/ChatPanel';
 import SettingsPanel from '@/components/admin/SettingsPanel';
+import DispatchPanel from '@/components/admin/DispatchPanel';
+import DriversPanel from '@/components/admin/DriversPanel';
+import DriverChatPanel from '@/components/admin/DriverChatPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
 // The owner's view of the bookings.
@@ -34,6 +37,11 @@ const SECTIONS = [
   { id: 'upcoming', label: 'Upcoming', Icon: CalendarDays },
   { id: 'past', label: 'Past', Icon: History },
   { id: 'undated', label: 'No date', Icon: HelpCircle, split: true },
+  // Drivers (DASHBOARD BRIEF #7). Dispatch = who drives which booking; Drivers =
+  // the logins the owner hands out. Their own group: a different job from
+  // reading bookings, same reason Prices is split off below.
+  { id: 'dispatch', label: 'Dispatch', Icon: Truck, split: true },
+  { id: 'drivers', label: 'Drivers', Icon: Users },
   // Separated from the four booking buckets: those are one list seen four ways,
   // this is a different job. Same reason the site's rail splits About from Legal.
   { id: 'prices', label: 'Prices', Icon: Tag, split: true },
@@ -97,6 +105,12 @@ export default function Dashboard({ demo = false }) {
   // Guest messages nobody has answered yet, shown on the rail the same way the
   // booking buckets show their counts.
   const [unread, setUnread] = useState(null);
+  // Brief #7: unread driver messages + bookings still waiting for a driver.
+  // Polled here (not only inside the panels) so the navbar badge and the rail
+  // count are right whichever section is open.
+  const [driverUnread, setDriverUnread] = useState(0);
+  const [needDriver, setNeedDriver] = useState(null);
+  const [chatWho, setChatWho] = useState('guests');
 
   // An expired session is not an error to read: send them to the door.
   const expired = useCallback(() => { router.replace('/login'); }, [router]);
@@ -116,6 +130,24 @@ export default function Dashboard({ demo = false }) {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (demo) return undefined;
+    let alive = true;
+    const tick = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const c = await getJson('/api/driver-chats');
+        if (alive) setDriverUnread((c.threads || []).reduce((s, t) => s + (t.unread || 0), 0));
+        const d = await getJson('/api/dispatch');
+        const refs = new Set((d.rows || []).filter((r) => !r.driverId).map((r) => r.ref || r.id));
+        if (alive) setNeedDriver(refs.size);
+      } catch (e) { if (e instanceof Unauthorized) expired(); }
+    };
+    tick();
+    const t = setInterval(tick, 30000);
+    return () => { alive = false; clearInterval(t); };
+  }, [demo, expired, tab]);
+
   // A push notification opens /?tab=<section> (public/sw.js). Read after mount,
   // then dropped from the URL so a reload does not keep jumping back to it.
   useEffect(() => {
@@ -130,6 +162,9 @@ export default function Dashboard({ demo = false }) {
   const isContent = tab === 'content';
   const isReviews = tab === 'reviews';
   const isSettings = tab === 'settings';
+  const isDispatch = tab === 'dispatch';
+  const isDrivers = tab === 'drivers';
+  const chatCount = (unread || 0) + driverUnread;
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
   const items = SECTIONS.map((s) => ({
@@ -138,8 +173,10 @@ export default function Dashboard({ demo = false }) {
       <>
         {s.label}
         {s.id === 'chat'
-          ? unread > 0 && <span className={COUNT}>{unread}</span>
-          : data && data[s.id] && <span className={COUNT}>{(data[s.id] || []).length}</span>}
+          ? chatCount > 0 && <span className={COUNT}>{chatCount}</span>
+          : s.id === 'dispatch'
+            ? needDriver > 0 && <span className={COUNT}>{needDriver}</span>
+            : data && data[s.id] && <span className={COUNT}>{(data[s.id] || []).length}</span>}
       </>
     ),
   }));
@@ -147,7 +184,7 @@ export default function Dashboard({ demo = false }) {
   // The phone drawer lists every section except Chat, which has its own icon
   // in the navbar (DASHBOARD BRIEF #1). The desktop rail is unchanged and
   // still carries Chat.
-  const countOf = (id) => (id === 'chat' ? unread : data && data[id] ? (data[id] || []).length : null);
+  const countOf = (id) => (id === 'chat' ? chatCount : id === 'dispatch' ? (needDriver || null) : data && data[id] ? (data[id] || []).length : null);
   const drawer = SECTIONS.filter((s) => s.id !== 'chat').map((s) => ({ ...s, count: countOf(s.id) }));
 
   return (
@@ -156,7 +193,7 @@ export default function Dashboard({ demo = false }) {
       sections={drawer}
       active={tab}
       onPick={setTab}
-      unread={unread || 0}
+      unread={chatCount}
       onChat={() => setTab('chat')}
       onSignOut={signOut}
       onSettings={() => setTab('settings')}
@@ -192,6 +229,10 @@ export default function Dashboard({ demo = false }) {
                     ? 'What guests wrote after their trip. You can take one down; nothing is deleted.'
                     : isSettings
                       ? 'Your account, and which notifications reach this device.'
+                      : isDispatch
+                        ? 'Pick a driver for each confirmed booking. They accept or decline in the driver app.'
+                        : isDrivers
+                          ? 'The driver logins. You create each one and hand over the username and password.'
                       : 'Change a price here and it applies straight away, no deploy.'}
         </p>
 
@@ -231,7 +272,26 @@ export default function Dashboard({ demo = false }) {
         {/* Sign out moved to the navbar's account slot + the phone drawer
             (DASHBOARD BRIEF #1/#2): reachable from every section at every width. */}
 
-        {isChat && <ChatPanel onExpired={expired} onUnread={setUnread} />}
+        {isChat && (
+          <div className="flex gap-[var(--space-1)] mb-[var(--space-2)]" role="group" aria-label="Whose chats">
+            {[['guests', 'Guests', unread || 0], ['drivers', 'Drivers', driverUnread]].map(([id, label, n]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={chatWho === id}
+                onClick={() => setChatWho(id)}
+                data-chat-who={id}
+                className={`inline-flex items-center gap-[0.35rem] h-[var(--btn-h)] px-[0.8rem] rounded-sm font-body text-small font-semibold cursor-pointer [transition:background-color_var(--dur)_var(--ease),scale_var(--dur-fast)_var(--ease)] ${chatWho === id ? 'bg-gold text-white border-none' : 'bg-white text-gold [border:1px_solid_var(--line)] hover:bg-cream'}`}
+              >
+                {label}{n > 0 && <span className="tabular-nums">{n}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+        {isChat && chatWho === 'guests' && <ChatPanel onExpired={expired} onUnread={setUnread} />}
+        {isChat && chatWho === 'drivers' && <DriverChatPanel onExpired={expired} onUnread={setDriverUnread} />}
+        {isDispatch && <DispatchPanel onExpired={expired} onGoDrivers={() => setTab('drivers')} />}
+        {isDrivers && <DriversPanel onExpired={expired} />}
         {isPromo && <PromoPanel onExpired={expired} />}
         {isContent && <ContentPanel onExpired={expired} />}
         {isReviews && <ReviewsPanel onExpired={expired} />}
@@ -239,7 +299,7 @@ export default function Dashboard({ demo = false }) {
         {/* The catch-all must exclude EVERY named section. Forget one and that
             tab silently renders the Prices panel instead - it happened when the
             Content section was added. */}
-        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && <PricesPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && !isDispatch && !isDrivers && <PricesPanel onExpired={expired} />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}

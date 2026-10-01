@@ -51,12 +51,12 @@ const ACCT_ROW = `${MENU_ROW_BOX} text-small font-medium text-gold no-underline 
 
 export const SITE_URL = 'https://cahyanaubudexperience.com';
 
-function AccountSlot({ demo, onSignOut, onSettings }) {
+function AccountSlot({ demo, onSignOut, onSettings, who: whoName, title, subtitle, settingsLabel, SettingsIcon }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef(null);
   const btnRef = useRef(null);
   const panelId = useId();
-  const who = demo ? 'Demo' : 'Owner';
+  const who = whoName || (demo ? 'Demo' : 'Owner');
 
   useEffect(() => {
     if (!open) return undefined;
@@ -93,13 +93,13 @@ function AccountSlot({ demo, onSignOut, onSettings }) {
         className="absolute right-0 top-[calc(100%+var(--space-1))] z-[130] min-[993px]:w-[18rem] w-[15rem] bg-white border border-line rounded-[var(--r-md)] p-[var(--space-1)]"
       >
         <div className="px-3 pt-2 pb-3">
-          <b className="block text-small font-semibold text-gold">{demo ? 'Demo account' : 'Owner'}</b>
-          <span className="block text-small text-muted">Cahyana dashboard</span>
+          <b className="block text-small font-semibold text-gold">{title || (demo ? 'Demo account' : 'Owner')}</b>
+          <span className="block text-small text-muted">{subtitle || 'Cahyana dashboard'}</span>
         </div>
         <span className="block h-px bg-line mb-1" aria-hidden="true" />
         {/* Same place as the site's account menu puts "Settings" (brief #4). */}
         <button type="button" className={ACCT_ROW} onClick={() => { setOpen(false); onSettings(); }} data-acct-settings>
-          <Bell strokeWidth={1.7} aria-hidden="true" />Settings
+          <SettingsIcon strokeWidth={1.7} aria-hidden="true" />{settingsLabel}
         </button>
         <span className="block h-px bg-line mt-1" aria-hidden="true" />
         <div className="pt-1">
@@ -112,7 +112,13 @@ function AccountSlot({ demo, onSignOut, onSettings }) {
   );
 }
 
-export default function Navbar({ sections, active, onPick, unread = 0, onChat, onSignOut, onSettings, demo = false }) {
+// The driver app (brief #7) is the same bar with its own words: `home` is where
+// the logo goes, `account` relabels the account slot, and `siteLink` drops the
+// "Live website" row a driver has no use for.
+export default function Navbar({
+  sections, active, onPick, unread = 0, onChat, onSignOut, onSettings, demo = false,
+  home = '/', account = {}, siteLink = true, label = 'Dashboard sections',
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef(null);
   const navRef = useRef(null);
@@ -173,7 +179,7 @@ export default function Navbar({ sections, active, onPick, unread = 0, onChat, o
           <span className={`${BURGER_BAR} ${menuOpen ? '-translate-y-[6px] -rotate-45' : ''}`} />
         </button>
 
-        <a href="/" className="mr-auto">
+        <a href={home} className="mr-auto">
           <img className="h-10 w-auto block mr-4 ml-[0.1rem] max-[992px]:h-[34px] max-[992px]:ml-0" src="/logo.webp" alt="The Cahyana Logo" width="1005" height="324" />
         </a>
 
@@ -190,7 +196,7 @@ export default function Navbar({ sections, active, onPick, unread = 0, onChat, o
           <span className={`absolute top-[-7px] right-[-9px] bg-gold ${BADGE_BASE}`} hidden={!unread}>{unread}</span>
         </button>
 
-        <nav ref={navRef} aria-label="Dashboard sections">
+        <nav ref={navRef} aria-label={label}>
           <ul
             className={`min-[993px]:hidden fixed top-0 left-0 bottom-0 right-auto w-4/5 max-w-[360px] h-[100dvh] bg-white px-[22px] pb-[30px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain transition-[translate] duration-300 ease-[var(--ease)] motion-reduce:transition-none z-[120] flex flex-col items-stretch text-left gap-0 list-none m-0 ${menuOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'}`}
             id="nav-menu"
@@ -227,13 +233,16 @@ export default function Navbar({ sections, active, onPick, unread = 0, onChat, o
               </li>
             ))}
 
+            {siteLink && (
             <li className={`mt-auto pt-4 ${NAV_LI}`}>
               <span className={SPLIT} aria-hidden="true" />
               <a href={SITE_URL} target="_blank" rel="noopener" className={navLink(false)} tabIndex={menuOpen ? 0 : -1} data-drawer-site>
                 <ExternalLink strokeWidth={1.7} aria-hidden="true" />Live website
               </a>
             </li>
-            <li className={NAV_LI}>
+            )}
+            <li className={siteLink ? NAV_LI : `mt-auto pt-4 ${NAV_LI}`}>
+              {!siteLink && <span className={SPLIT} aria-hidden="true" />}
               <button type="button" className={navLink(false)} tabIndex={menuOpen ? 0 : -1} onClick={() => { setMenuOpen(false); onSignOut(); }} data-drawer-signout>
                 <LogOut strokeWidth={1.7} aria-hidden="true" />Sign out
               </button>
@@ -241,7 +250,16 @@ export default function Navbar({ sections, active, onPick, unread = 0, onChat, o
           </ul>
         </nav>
 
-        <AccountSlot demo={demo} onSignOut={onSignOut} onSettings={onSettings} />
+        <AccountSlot
+          demo={demo}
+          onSignOut={onSignOut}
+          onSettings={onSettings}
+          who={account.who}
+          title={account.title}
+          subtitle={account.subtitle}
+          settingsLabel={account.settingsLabel || 'Settings'}
+          SettingsIcon={account.SettingsIcon || Bell}
+        />
       </div>
 
       <div

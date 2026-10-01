@@ -40,10 +40,11 @@ const ITEMS = [
   { id: 'prices', label: 'Prices', Icon: Tag },
 ];
 
-export default function AppBottomNav({ active, onPick, counts = {} }) {
+// `items` lets the driver app (brief #7) use the same bar with its own four tabs.
+export default function AppBottomNav({ active, onPick, counts = {}, items = ITEMS }) {
   return (
     <nav className={BAR} aria-label="Sections" data-appnav>
-      {ITEMS.map(({ id, label, Icon }) => {
+      {items.map(({ id, label, Icon }) => {
         const on = active === id;
         const n = counts[id];
         return (

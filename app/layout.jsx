@@ -7,6 +7,14 @@ export const metadata = {
   // Nothing here belongs in a search result. This is not the security boundary
   // (that is the API), it just keeps a sign-in form out of Google.
   robots: { index: false, follow: false },
+  // In metadata, not hard-coded in <head>, so /driver can swap all three for its
+  // own (DASHBOARD BRIEF #7: a second installable app on the same origin).
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [{ url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  appleWebApp: { capable: true, title: 'Dashboard', statusBarStyle: 'default' },
 };
 
 export const viewport = { width: 'device-width', initialScale: 1 };
@@ -29,14 +37,9 @@ export default function RootLayout({ children }) {
           type="font/woff2"
           crossOrigin="anonymous"
         />
-        <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <meta name="theme-color" content="#ffffff" />
-        <meta name="mobile-web-app-capable" content="yes" />
+        {/* Older iPhones only open standalone with this exact name. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Dashboard" />
       </head>
       {/* Room for the bottom bar, reserved only where the bar exists. Measured:
           the bar is 65px since it took the site's book-bar paddings. */}

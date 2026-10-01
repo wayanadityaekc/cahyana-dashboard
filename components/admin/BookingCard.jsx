@@ -95,6 +95,12 @@ export default function BookingCard({ g }) {
             {l.pickup && <span className={NOTE}>from {l.pickup}</span>}
             {l.dropoff && <span className={NOTE}>to {l.dropoff}</span>}
             {l.flightNumber && <span className={NOTE}>flight {l.flightNumber}</span>}
+            {/* Brief #7: who drives it, and whether they said yes. */}
+            {l.driver && (
+              <span className={NOTE} data-line-driver>
+                driver {l.driver.name || '?'}{l.driver.status === 'accepted' ? ' (accepted)' : ' (waiting)'}
+              </span>
+            )}
           </div>
         ))}
       </div>
