@@ -46,7 +46,7 @@ const rp = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 const digits = (v) => String(v).replace(/[^\d]/g, '');
 const grouped = (v) => (digits(v) ? Number(digits(v)).toLocaleString('en-US') : '');
 
-export default function PricesPanel({ onExpired }) {
+export default function PricesPanel({ onExpired, scope = '' }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -59,14 +59,14 @@ export default function PricesPanel({ onExpired }) {
   const load = useCallback(async () => {
     setBusy(true); setErr('');
     try {
-      setData(await getJson('/api/prices'));
+      setData(await getJson(`/api/prices${scope ? `?scope=${scope}` : ''}`));
       setDraft({}); setAsk({}); setRowErr({});
     } catch (e) {
       if (e instanceof Unauthorized) onExpired();
       else setErr(e.message || 'Could not load prices.');
     }
     setBusy(false);
-  }, [onExpired]);
+  }, [onExpired, scope]);
 
   useEffect(() => { load(); }, [load]);
 

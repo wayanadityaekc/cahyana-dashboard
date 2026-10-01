@@ -32,7 +32,7 @@ for (const w of [390, 768, 1280]) {
   page.on('pageerror', (e) => errs.push(String(e)));
 
   // A stranger gets the door, not the data.
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   ok(new URL(page.url()).pathname === '/login', `${w}: / did not redirect to /login`);
   ok(!(await page.content()).includes('Sample Guest'), `${w}: booking data leaked into the login page`);
 
@@ -71,6 +71,7 @@ for (const w of [390, 768, 1280]) {
   await page.fill('#adm-pass', 'demo');
   await page.click('button[type=submit]');
   await page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 15000 });
+  await page.goto(new URL('/cue', page.url()).href, { waitUntil: 'networkidle' });
   await page.waitForSelector('text=Sample Guest', { timeout: 15000 });
 
   ok(/Demo data/i.test(await page.innerText('body')), `${w}: no demo banner`);

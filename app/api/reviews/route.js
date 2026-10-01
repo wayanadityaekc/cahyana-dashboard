@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { upstream, withSession, Unauthorized } from '@/lib/upstream.js';
 import { clearedCookie } from '@/lib/session.js';
 import { demoReviews } from '@/lib/demoData.js';
+import { scopeOf } from '@/lib/scope.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ export async function GET(req) {
   if (s.demo) return NextResponse.json(demoReviews(status), { headers: { 'Cache-Control': 'no-store' } });
 
   try {
-    const out = await upstream(`/admin/reviews${status ? `?status=${status}` : ''}`, { token: s.token });
+    const qs = [status && `status=${status}`, scopeOf(req) === 'cue' && 'scope=cue'].filter(Boolean).join('&');
+    const out = await upstream(`/admin/reviews${qs ? `?${qs}` : ''}`, { token: s.token });
     return NextResponse.json(out.json, { status: out.status, headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     if (e instanceof Unauthorized) return expired();

@@ -120,7 +120,7 @@ export default function Dashboard({ demo = false }) {
     setBusy(true);
     setErr('');
     try {
-      setData(await getJson('/api/bookings'));
+      setData(await getJson('/api/bookings?scope=cue'));
     } catch (e) {
       if (e instanceof Unauthorized) expired();
       else setErr(e.message || 'Could not load bookings.');
@@ -198,6 +198,7 @@ export default function Dashboard({ demo = false }) {
       onSignOut={signOut}
       onSettings={() => setTab('settings')}
       demo={demo}
+      dash="cue"
     />
     <div className={RAIL_PAGE_SCROLL}>
       <RailLayout
@@ -299,7 +300,7 @@ export default function Dashboard({ demo = false }) {
         {/* The catch-all must exclude EVERY named section. Forget one and that
             tab silently renders the Prices panel instead - it happened when the
             Content section was added. */}
-        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && !isDispatch && !isDrivers && <PricesPanel onExpired={expired} />}
+        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && !isDispatch && !isDrivers && <PricesPanel onExpired={expired} scope="cue" />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}

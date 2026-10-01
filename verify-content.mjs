@@ -31,7 +31,7 @@ for (const w of [390, 1280]) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e)));
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
   // On a phone the sections live in the navbar's drawer (DASHBOARD BRIEF #2).
   if (w < 993) {
@@ -176,7 +176,7 @@ for (const w of [390, 1280]) {
     j.build = { state: 'awaiting-merge', url: j.compareUrl };
     return route.fulfill({ response: res, body: JSON.stringify(j) });
   });
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
   await page.locator('button:visible', { hasText: 'Content' }).first().click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(900);
@@ -212,7 +212,7 @@ for (const w of [390, 1280]) {
       body: JSON.stringify({ status: "error", detail: "Bad credentials" }),
     });
   });
-  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.goto(BASE + "/cue", { waitUntil: "networkidle" });
   await page.waitForTimeout(600);
   await page.locator("button:visible", { hasText: "Content" }).first().click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(900);
@@ -232,7 +232,7 @@ for (const w of [390, 1280]) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e)));
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
   await page.locator('button:visible', { hasText: 'Content' }).first().click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(700);

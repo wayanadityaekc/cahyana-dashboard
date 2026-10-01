@@ -42,7 +42,7 @@ for (const w of [390, 1280]) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e)));
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
 
   // On a phone the sections live in the navbar's drawer (DASHBOARD BRIEF #2).

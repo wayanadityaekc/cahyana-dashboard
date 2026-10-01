@@ -91,7 +91,7 @@ for (const w of [390, 1280]) {
   for (const via of ['menu', 'account']) {
     const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
     const page = await ctx.newPage();
-    await page.goto(DASH + '/', { waitUntil: 'networkidle' });
+    await page.goto(DASH + '/cue', { waitUntil: 'networkidle' });
     ok(await openSettings(page, w, via), `${w}: Settings did not open from the ${via === 'menu' ? (w <= 992 ? 'drawer' : 'sidebar') : 'account menu'}`);
     await page.waitForFunction(() => !/Loading/.test(document.querySelector('[data-set-user]')?.textContent || 'Loading'), null, { timeout: 8000 }).catch(() => {});
     const who = await page.locator('[data-set-user]').innerText().catch(() => '');
@@ -296,7 +296,7 @@ for (const w of [390, 1280]) {
   const out = await pa.waitForURL((u) => new URL(u).pathname === '/login', { timeout: 10000 }).then(() => true).catch(() => false);
   ok(out, 'sign out on all devices did not send this device to /login');
   const po = await other.newPage();
-  await po.goto(DASH + '/', { waitUntil: 'networkidle' });
+  await po.goto(DASH + '/cue', { waitUntil: 'networkidle' });
   await sleep(800);
   // The other device's cookie is still there, but the API session behind it is
   // gone - its first data call bounces it to the door.

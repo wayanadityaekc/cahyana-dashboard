@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Star } from 'lucide-react';
 import { CARD, STACK, HEAD, NOTE, ERR, EMPTY, rupiah, dayLabel } from '@/components/ui/panelClasses';
 import { getJson, Unauthorized } from '@/lib/api';
 
@@ -123,10 +124,59 @@ function Chart({ months }) {
   );
 }
 
+// Stars as drawn marks: filled = the rating, outline = the rest. Colour is amber
+// (the site's star colour); the number is always written next to them, so the
+// rating never rides on colour alone.
+function Stars({ n }) {
+  return (
+    <span className="inline-flex gap-[1px]" role="img" aria-label={`${n} out of 5`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} className="w-[14px] h-[14px]" strokeWidth={1.6}
+          style={{ color: 'var(--color-amber)', fill: i <= n ? 'var(--color-amber)' : 'none' }} aria-hidden="true" />
+      ))}
+    </span>
+  );
+}
+
+// Tour reviews linked to the jobs this driver drove (brief #8 Part 2). Stars,
+// tour and month only - the guest's words and name stay with the owner. It is the
+// review of the whole tour, and the heading says so.
+function ReviewsCard({ r }) {
+  return (
+    <section className={CARD} aria-labelledby="earn-rev" data-driver-reviews>
+      <div className="flex flex-wrap items-baseline gap-x-[var(--space-2)] gap-y-[0.2rem]">
+        <h2 id="earn-rev" className={HEAD}>Tour reviews</h2>
+        {r.count > 0 && (
+          <span className="font-body text-body text-green tabular-nums" data-rev-summary>
+            <b>{r.avg.toFixed(1)}</b> from {r.count} review{r.count === 1 ? '' : 's'}
+          </span>
+        )}
+      </div>
+      {r.count === 0 && <p className={NOTE} data-rev-empty>No reviews yet. When a guest reviews a tour you drove, it shows here.</p>}
+      {r.reviews.map((x, i) => (
+        <div key={i} className={ROW} data-rev>
+          <Stars n={x.rating} />
+          <span className="tabular-nums text-small text-muted">{x.rating}/5</span>
+          <span className="flex-1 min-w-0">{x.service || 'Tour'}</span>
+          <span className="text-small text-muted whitespace-nowrap">{monthName(x.month, true)}</span>
+        </div>
+      ))}
+      <p className={NOTE}>A tour review rates the whole day - the places and the guide - not only the driving.</p>
+    </section>
+  );
+}
+
 export default function EarningsTab({ onExpired }) {
+  const [rev, setRev] = useState(null);
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [open, setOpen] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try { setRev(await getJson('/api/driver/reviews')); } catch (e) { if (e instanceof Unauthorized) onExpired(); }
+    })();
+  }, [onExpired]);
 
   useEffect(() => {
     (async () => {
@@ -165,6 +215,8 @@ export default function EarningsTab({ onExpired }) {
         {any ? <Chart months={months} /> : <p className={NOTE}>No jobs in the last 12 months yet.</p>}
         <p className={NOTE}>Full program price of each job, in rupiah. A job counts as earned once its date has passed.</p>
       </section>
+
+      {rev && <ReviewsCard r={rev} />}
 
       <section className={CARD} aria-labelledby="earn-list">
         <h2 id="earn-list" className={HEAD}>Month by month</h2>

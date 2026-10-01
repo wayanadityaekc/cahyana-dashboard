@@ -95,6 +95,7 @@ const guestId = started.json.thread;
 // --- sign in ------------------------------------------------------------
 await signIn(page, USER, PASS, 'owner');
 ok(await untilTrue(page, () => new URL(location.href).pathname === '/', 15000), 'signing in did not reach the dashboard');
+await page.goto(new URL('/cue', page.url()).href, { waitUntil: 'networkidle' }); // sign-in lands on the tiles; the tours dashboard is /cue (brief #8)
 
 // --- open the chat section ----------------------------------------------
 await page.locator('[data-nav-chat]').first().click(); // navbar chat icon (DASHBOARD BRIEF #2)
@@ -163,6 +164,7 @@ const dctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
 const dpage = await dctx.newPage();
 await signIn(dpage, 'demo', 'demo', 'demo');
 ok(await untilTrue(dpage, () => new URL(location.href).pathname === '/', 15000), 'the demo sign-in did not reach the dashboard');
+await dpage.goto(new URL('/cue', dpage.url()).href, { waitUntil: 'networkidle' });
 await dpage.locator('[data-nav-chat]').first().click(); // navbar chat icon (DASHBOARD BRIEF #2)
 ok(await seen(dpage.locator('[data-live]'), 8000), 'the demo chat column never rendered');
 await sleep(2500);

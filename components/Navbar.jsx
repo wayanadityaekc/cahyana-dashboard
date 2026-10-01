@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bell, ChevronDown, ExternalLink, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
+import { Bell, ChevronDown, ExternalLink, LayoutDashboard, LogOut, MessageCircle, UserRound, X } from 'lucide-react';
 import { MENU_ROW_BOX } from '@/components/ui/railClasses';
 
 // The dashboard's header, ported from the public site's navbar (Sep 2026,
@@ -50,6 +50,30 @@ const ICON_BTN =
 const ACCT_ROW = `${MENU_ROW_BOX} text-small font-medium text-gold no-underline bg-transparent border-none cursor-pointer font-body hover:bg-cream`;
 
 export const SITE_URL = 'https://cahyanaubudexperience.com';
+
+// The two dashboards (DASHBOARD BRIEF #8). One login, two scoped views; this is
+// the way between them. `dash` says which one you are in.
+export const DASHBOARDS = [
+  { id: 'cue', label: 'Tours', long: 'Cahyana Ubud Experience', href: '/cue' },
+  { id: 'villas', label: 'Villas', long: 'Ubud Private Villas', href: '/villas' },
+];
+
+function DashSwitch({ dash }) {
+  return (
+    <nav aria-label="Dashboards" className="max-[992px]:hidden flex items-center gap-[2px] p-[2px] rounded-sm [border:1px_solid_var(--line)] mr-4" data-dash-switch>
+      {DASHBOARDS.map((d) => (
+        <a
+          key={d.id}
+          href={d.href}
+          aria-current={dash === d.id ? 'page' : undefined}
+          className={`px-3 h-[28px] inline-flex items-center rounded-[6px] font-body text-small no-underline ${dash === d.id ? 'bg-cream font-semibold text-gold-d' : 'font-medium text-muted hover:text-gold'}`}
+        >
+          {d.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
 
 function AccountSlot({ demo, onSignOut, onSettings, who: whoName, title, subtitle, settingsLabel, SettingsIcon }) {
   const [open, setOpen] = useState(false);
@@ -118,6 +142,7 @@ function AccountSlot({ demo, onSignOut, onSettings, who: whoName, title, subtitl
 export default function Navbar({
   sections, active, onPick, unread = 0, onChat, onSignOut, onSettings, demo = false,
   home = '/', account = {}, siteLink = true, label = 'Dashboard sections',
+  dash = null, showChat = true,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef(null);
@@ -182,9 +207,10 @@ export default function Navbar({
         <a href={home} className="mr-auto">
           <img className="h-10 w-auto block mr-4 ml-[0.1rem] max-[992px]:h-[34px] max-[992px]:ml-0" src="/logo.webp" alt="The Cahyana Logo" width="1005" height="324" />
         </a>
+        {dash && <DashSwitch dash={dash} />}
 
         {/* Chat sits OUTSIDE the drawer, same shape as the site's chat icon. */}
-        <button
+        {showChat && <button
           type="button"
           className={`${ICON_BTN} ${active === 'chat' ? 'text-gold-d' : ''}`}
           aria-label={unread > 0 ? `Chat, ${unread} unread` : 'Chat'}
@@ -194,7 +220,7 @@ export default function Navbar({
         >
           <MessageCircle className="w-5 h-5" strokeWidth={1.6} aria-hidden="true" />
           <span className={`absolute top-[-7px] right-[-9px] bg-gold ${BADGE_BASE}`} hidden={!unread}>{unread}</span>
-        </button>
+        </button>}
 
         <nav ref={navRef} aria-label={label}>
           <ul
@@ -214,6 +240,15 @@ export default function Navbar({
                 <X strokeWidth={2} aria-hidden="true" />
               </button>
             </li>
+
+            {dash && DASHBOARDS.map((d) => (
+              <li key={d.id} className={NAV_LI}>
+                <a href={d.href} className={navLink(dash === d.id)} aria-current={dash === d.id ? 'page' : undefined} tabIndex={menuOpen ? 0 : -1} data-drawer-dash={d.id}>
+                  <LayoutDashboard strokeWidth={1.7} aria-hidden="true" />{d.long}
+                </a>
+              </li>
+            ))}
+            {dash && <li className={NAV_LI}><span className={SPLIT} aria-hidden="true" /></li>}
 
             {sections.map((s) => (
               <li key={s.id} className={NAV_LI}>

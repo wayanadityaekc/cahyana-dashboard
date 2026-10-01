@@ -41,6 +41,8 @@ const fakePush = (endpoint) => {
   };
 };
 
+// The picker now reads "Made - No reviews yet" (brief #8), so options are found by prefix.
+const optionStartingWith = (sel, prefix) => sel.evaluate((el, p) => [...el.options].find((o) => o.text.startsWith(p))?.value, prefix);
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const errs = [];
 const watch = (page, tag) => page.on('pageerror', (e) => errs.push(`${tag}: ${e.message}`));
@@ -89,6 +91,7 @@ let OWNER, madePw;
   const landed = await page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 20000 }).then(() => true).catch(() => false);
   if (!landed) { console.log('  FAIL: owner sign-in (restart both servers)'); process.exit(1); }
   OWNER = await ctx.storageState();
+  await page.goto(DASH + '/cue', { waitUntil: 'networkidle' }); // sign-in lands on the tiles (brief #8)
   // An owner phone with push on, straight through the API, so the owner pushes
   // (driver message, decline) have somewhere to go.
   await fetch(DASH.replace(/:\d+$/, ':4598') + '/api/admin/push/subscribe', {
@@ -129,7 +132,7 @@ let OWNER, madePw;
   ok(await g.locator('[data-dispatch-row]').count() === 2, 'two days in CUE-901');
   ok(/Unassigned/i.test(await g.locator('[data-row-status]').first().innerText()), 'new booking not shown Unassigned');
   writeFileSync(PUSH_LOG, '');
-  await g.locator('[data-group-driver]').selectOption({ label: 'Made' });
+  await g.locator('[data-group-driver]').selectOption({ value: await optionStartingWith(g.locator('[data-group-driver]'), 'Made') });
   await g.locator('[data-group-note]').fill('Meet at the lobby');
   await g.locator('[data-group-assign]').click();
   await page.waitForFunction(() => /Waiting - Made/.test(document.querySelector('[data-dispatch-group="CUE-901"]')?.innerText || ''), null, { timeout: 8000 }).catch(() => {});
@@ -139,7 +142,7 @@ let OWNER, madePw;
   ok(st.length === 2 && st.every((s) => /Waiting - Made/i.test(s)), `CUE-901 statuses ${st}`);
   // CUE-902 to Made as well (he will decline it)
   const g2 = page.locator('[data-dispatch-group="CUE-902"]');
-  await g2.locator('[data-group-driver]').selectOption({ label: 'Made' });
+  await g2.locator('[data-group-driver]').selectOption({ value: await optionStartingWith(g2.locator('[data-group-driver]'), 'Made') });
   await g2.locator('[data-group-assign]').click();
   await sleep(800);
   await ctx.close();

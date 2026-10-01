@@ -34,6 +34,13 @@ const chip = (on) =>
   (on ? 'bg-gold text-white border-none' : 'bg-white text-gold [border:1px_solid_var(--line)] hover:bg-cream');
 const GROUP_FORM = 'grid gap-[var(--space-1)] min-[700px]:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] min-[700px]:items-end mt-[var(--space-1)] pt-[var(--space-2)] [border-top:1px_solid_var(--line)]';
 
+// "4.5 (12 reviews)" or "No reviews yet" - never a made-up number (brief #8).
+function ratingText(r) {
+  if (!r || !r.count) return 'No reviews yet';
+  return `${r.avg.toFixed(1)} (${r.count} review${r.count === 1 ? '' : 's'})`;
+}
+const optLabel = (d) => `${d.name} - ${ratingText(d.rating)}`;
+
 function statusOf(r) {
   if (r.driverId && r.driverStatus === 'accepted') return { word: `Accepted - ${r.driverName}`, tone: PILL_OK };
   if (r.driverId) return { word: `Waiting - ${r.driverName}`, tone: PILL_WAIT };
@@ -82,6 +89,7 @@ function GroupCard({ g, drivers, onAssign, busy }) {
               {r.dropoff && <span className={SMALL}>to {r.dropoff}</span>}
               {r.flightNumber && <span className={SMALL}>flight {r.flightNumber}</span>}
               <span className={`${PILL} ${st.tone}`} data-row-status>{st.word}</span>
+              {r.driverId && <span className={SMALL} data-row-rating>{ratingText(r.driverRating)}</span>}
               {many && (
                 <select
                   className={LINE_SELECT}
@@ -92,7 +100,7 @@ function GroupCard({ g, drivers, onAssign, busy }) {
                   data-row-driver
                 >
                   <option value="">Unassigned</option>
-                  {active.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {active.map((d) => <option key={d.id} value={d.id}>{optLabel(d)}</option>)}
                 </select>
               )}
             </div>
@@ -108,7 +116,7 @@ function GroupCard({ g, drivers, onAssign, busy }) {
           <label className={FIELD_LABEL} htmlFor={`dr-${g.key}`}>{many ? 'Driver for the whole booking' : 'Driver'}</label>
           <select id={`dr-${g.key}`} className={FIELD_INPUT} value={pick} onChange={(e) => setPick(e.target.value)} data-group-driver>
             <option value="">Unassigned</option>
-            {active.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            {active.map((d) => <option key={d.id} value={d.id}>{optLabel(d)}</option>)}
           </select>
         </div>
         <div>

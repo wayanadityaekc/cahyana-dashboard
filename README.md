@@ -387,3 +387,33 @@ PUSH_LOG=/tmp/p.jsonl node verify-driver.mjs
 ```
 Restart both before each run. The look is measured against the owner's dashboard in
 the same browser (header, logo, h1, tab bar, rail), at 320 / 390 / 768 / 1280.
+
+## Two dashboards (DASHBOARD BRIEF #8)
+`/` is the home page: two tiles, **Cahyana Ubud Experience** and **Ubud Private Villas**, each with one live
+number. One login opens both; the navbar has a Tours | Villas switcher (a drawer row on phones).
+- **`/cue`** - everything tour-side: bookings, Dispatch, Drivers, Sale, Content, Reviews, Chat, tour Prices.
+  Asks the API with `?scope=cue`, so it can never receive a villa line.
+- **`/villas`** - Upcoming / Past stays, Needs attention, **Calendar** (is each villa's Airbnb calendar readable,
+  and which nights are taken - an unreadable calendar says so instead of looking empty), the two villas' Prices,
+  and **Discounts** and **Ratings**, which exist as pages but are deliberately not wired (no rule, no form, no
+  numbers) until the owner decides the rules. Asks with `?scope=villa`. No chat icon: there is no villa chat.
+- **Bundled bookings** (one ref: a villa stay + tours) show on each side with only that side's lines, a
+  "part of a bundle" note and a link to the other dashboard. The total shown is the whole booking's: it is
+  one payment.
+- **Old links keep working**: `/?tab=upcoming` (old bookmarks, push notifications) redirect to `/cue?tab=upcoming`.
+  Only known section names are forwarded.
+- This separates what each dashboard *shows*; there is still one owner login, not two permission levels.
+
+### Driver ratings
+A guest reviews the tour once; that review counts for the driver of that booking and tour (booking ref + tour
+name -> the dispatched row). Dispatch shows "Made - 4.5 (12 reviews)" in the picker and on each assigned line,
+"No reviews yet" when none. The Drivers list does not show ratings. The driver app's Earnings page has a
+"Tour reviews" card: average, count, and per review only stars, tour and month - never the guest's words,
+name or booking.
+
+### Verifying it
+Same servers as above (`driver-dev-server.js` now also seeds a villa bundle), plus:
+```
+PG_URL_FILE=/tmp/pgurl.txt node tools/driver-dev-server.js     # in cahyana-api; also needs PUSH_LOG
+PG_URL_FILE=/tmp/pgurl.txt node verify-split.mjs
+```

@@ -84,7 +84,8 @@ export default function ReviewsPanel({ onExpired }) {
 
   const load = useCallback(async () => {
     try {
-      const j = await getJson(`/api/reviews${view ? `?status=${view}` : ''}`);
+      // Tour reviews only: villa reviews belong to the Villas dashboard (brief #8).
+      const j = await getJson(`/api/reviews?scope=cue${view ? `&status=${view}` : ''}`);
       setData(j);
     } catch (e) {
       if (e instanceof Unauthorized) return onExpired();

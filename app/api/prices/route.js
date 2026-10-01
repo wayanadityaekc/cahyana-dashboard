@@ -3,6 +3,7 @@ import { upstream, withSession, Unauthorized } from '@/lib/upstream.js';
 import { clearedCookie } from '@/lib/session.js';
 import { demoPricesFor, readPatch, patchCookie, applyDemoEdit } from '@/lib/demo.js';
 import { demoPrices } from '@/lib/demoData.js';
+import { scopeOf, withScope } from '@/lib/scope.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,14 +14,24 @@ function expired() {
   return res;
 }
 
-export async function GET() {
+export async function GET(req) {
+  const scope = scopeOf(req);
   let s;
   try { s = await withSession(); } catch { return expired(); }
 
-  if (s.demo) return NextResponse.json(await demoPricesFor(), { headers: { 'Cache-Control': 'no-store' } });
+  if (s.demo) {
+    const d = await demoPricesFor();
+    // Same split as the API: a scope keeps only its own items.
+    if (scope) {
+      d.items = d.items.filter((r) => (r.category === 'villa') === (scope === 'villa'));
+      const keep = new Set(d.items.map((r) => r.name));
+      d.drift = d.drift.filter((x) => keep.has(x.name));
+    }
+    return NextResponse.json(d, { headers: { 'Cache-Control': 'no-store' } });
+  }
 
   try {
-    const out = await upstream('/admin/prices', { token: s.token });
+    const out = await upstream(withScope('/admin/prices', scope), { token: s.token });
     return NextResponse.json(out.json, { status: out.status, headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     if (e instanceof Unauthorized) return expired();

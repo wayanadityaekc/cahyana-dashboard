@@ -96,7 +96,7 @@ for (const w of [320, 390, 768, 1280]) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(String(e)));
-  await page.goto(DASH + '/', { waitUntil: 'networkidle' });
+  await page.goto(DASH + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
   const d = await measure(page, DASH_SEL);
 
@@ -238,7 +238,7 @@ for (const w of [320, 390, 768, 1280]) {
     const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
     const page = await ctx.newPage();
     if (mode === 'app') await appMode(page);
-    await page.goto(DASH + '/', { waitUntil: 'networkidle' });
+    await page.goto(DASH + '/cue', { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
     const shown = await page.evaluate(() => getComputedStyle(document.querySelector('[data-appnav]')).display !== 'none');
     if (w > 992) {
@@ -288,7 +288,7 @@ for (const w of [320, 390, 768, 1280]) {
 
     const ctx = await b.newContext({ viewport: { width: w, height: 844 }, storageState: SESSION });
     const page = await ctx.newPage();
-    await page.goto(DASH + '/', { waitUntil: 'networkidle' });
+    await page.goto(DASH + '/cue', { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
     const d = await card(page);
     for (const k of ['pl', 'pr', 'pt', 'pb', 'border', 'rad', 'shadow']) {

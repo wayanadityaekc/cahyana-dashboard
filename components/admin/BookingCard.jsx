@@ -64,7 +64,7 @@ function money(g) {
   return null;
 }
 
-export default function BookingCard({ g }) {
+export default function BookingCard({ g, side = 'cue' }) {
   const total = money(g);
   const tone = PILL_TONE[g.status] || PILL_TONE.test;
 
@@ -94,6 +94,7 @@ export default function BookingCard({ g }) {
             <span className={WHAT}>{l.service || l.type || 'Unnamed item'}</span>
             {l.pickup && <span className={NOTE}>from {l.pickup}</span>}
             {l.dropoff && <span className={NOTE}>to {l.dropoff}</span>}
+            {l.type === 'villa' && l.items && <span className={NOTE}>{l.items}</span>}
             {l.flightNumber && <span className={NOTE}>flight {l.flightNumber}</span>}
             {/* Brief #7: who drives it, and whether they said yes. */}
             {l.driver && (
@@ -108,6 +109,18 @@ export default function BookingCard({ g }) {
       {total && (
         <p className={FOOT}>
           <strong>{total.amount}</strong> <span className={NOTE}>{total.note}</span>
+        </p>
+      )}
+
+      {/* A bundled booking (villa stay + tours) is one payment, so the total
+          above is the whole booking; this dashboard shows only its own lines. */}
+      {g.bundle && (
+        <p className={NOTE + ' mt-[0.55rem]'} data-bundle>
+          Part of a bundle with {g.bundle.lines} {g.bundle.with === 'villa' ? 'villa stay' : 'tour'} line{g.bundle.lines === 1 ? '' : 's'}.
+          The total above is for the whole booking.{' '}
+          <a className="text-gold underline underline-offset-2" href={g.bundle.with === 'villa' ? '/villas' : '/cue'} data-bundle-link>
+            Open {g.bundle.with === 'villa' ? 'Villas' : 'Cahyana Ubud Experience'}
+          </a>
         </p>
       )}
 

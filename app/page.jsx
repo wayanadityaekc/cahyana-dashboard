@@ -1,14 +1,23 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/session.js';
-import Dashboard from '@/components/Dashboard';
+import Landing from '@/components/Landing';
 
 export const dynamic = 'force-dynamic';
 
-// The middleware already turns visitors without a cookie away; this checks again
-// on the server because a page that decides what to render from a cookie should
-// read that cookie itself, not trust that something upstream did.
-export default async function Page() {
+// Home = the two tiles (DASHBOARD BRIEF #8). The tours dashboard moved to /cue.
+//
+// OLD LINKS KEEP WORKING: a push notification or a bookmark that opened
+// "/?tab=upcoming" is sent on to "/cue?tab=upcoming". Only a known section name is
+// forwarded, built here - the query string is never echoed into the redirect.
+const CUE_TABS = new Set([
+  'attention', 'upcoming', 'past', 'undated', 'dispatch', 'drivers',
+  'prices', 'promo', 'content', 'reviews', 'chat', 'settings',
+]);
+
+export default async function Page({ searchParams }) {
   const s = await readSession();
   if (!s) redirect('/login');
-  return <Dashboard demo={s.demo} />;
+  const tab = (await searchParams).tab;
+  if (typeof tab === 'string' && CUE_TABS.has(tab)) redirect(`/cue?tab=${tab}`);
+  return <Landing demo={s.demo} />;
 }

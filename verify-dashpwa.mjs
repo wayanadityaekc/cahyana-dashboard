@@ -47,7 +47,7 @@ const bootstrap = async (browser) => {
   await ctx.close();
 };
 const signIn = async (page) => {
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/cue', { waitUntil: 'networkidle' });
   await page.waitForTimeout(800);
 };
 
