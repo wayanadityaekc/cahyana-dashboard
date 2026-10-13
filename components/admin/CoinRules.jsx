@@ -29,8 +29,8 @@ function whole(value, [min, max]) {
   return value !== '' && Number.isInteger(n) && n >= min && n <= max ? n : null;
 }
 
-// The package bonus rule (coin_package_bonus) is not on the API answer yet. When it
-// arrives as an array or a { package: coins } map, it is shown here read-only.
+// The package bonus per stay package (coin_package_bonus), from the API rules answer.
+// Read-only here; an array or a { package: coins } map is accepted.
 function packageRows(data) {
   const raw = data.packageBonus || data.package_bonus;
   if (!raw) return null;
