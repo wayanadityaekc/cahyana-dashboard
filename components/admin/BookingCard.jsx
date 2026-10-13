@@ -1,4 +1,7 @@
+import { Gift } from 'lucide-react';
 import { fmtTime } from '@/lib/time';
+import { splitCovered } from '@/lib/coinLabels';
+import BookingCoins, { COVERED_NOTE } from '@/components/admin/BookingCoins';
 
 // One booking, the way a booking actually exists: `inquiries` holds one row per
 // day, so a three-day trip is three rows sharing a booking_ref. The API groups
@@ -64,6 +67,21 @@ function money(g) {
   return null;
 }
 
+// Coin-paid perks ride in the villa line's items; staff must not charge for them, so they get their own note.
+function VillaItems({ items }) {
+  const { plain, covered } = splitCovered(items);
+  return (
+    <>
+      {plain.length > 0 && <span className={NOTE}>{plain.join('; ')}</span>}
+      {covered.map((part) => (
+        <p key={part} className={`${COVERED_NOTE} basis-full`} data-covered-note>
+          <Gift strokeWidth={1.8} aria-hidden="true" /><span>{part}. Do not charge the guest for it.</span>
+        </p>
+      ))}
+    </>
+  );
+}
+
 export default function BookingCard({ g, side = 'cue' }) {
   const total = money(g);
   const tone = PILL_TONE[g.status] || PILL_TONE.test;
@@ -94,7 +112,7 @@ export default function BookingCard({ g, side = 'cue' }) {
             <span className={WHAT}>{l.service || l.type || 'Unnamed item'}</span>
             {l.pickup && <span className={NOTE}>from {l.pickup}</span>}
             {l.dropoff && <span className={NOTE}>to {l.dropoff}</span>}
-            {l.type === 'villa' && l.items && <span className={NOTE}>{l.items}</span>}
+            {l.type === 'villa' && l.items && <VillaItems items={l.items} />}
             {l.flightNumber && <span className={NOTE}>flight {l.flightNumber}</span>}
             {/* Brief #7: who drives it, and whether they said yes. */}
             {l.driver && (
@@ -125,6 +143,8 @@ export default function BookingCard({ g, side = 'cue' }) {
       )}
 
       {g.why && <p className={WHY}>{g.why}</p>}
+
+      <BookingCoins group={g} side={side} />
     </article>
   );
 }

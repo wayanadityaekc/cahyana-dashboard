@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Bell, CalendarCheck, CalendarDays, History, Percent, RefreshCw, Star, Tag } from 'lucide-react';
+import { AlertTriangle, Bell, CalendarCheck, CalendarDays, Coins, History, Percent, RefreshCw, Star, Tag } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import Navbar from '@/components/Navbar';
@@ -13,6 +13,7 @@ import PricesPanel from '@/components/admin/PricesPanel';
 import SettingsPanel from '@/components/admin/SettingsPanel';
 import VillaCalendarPanel from '@/components/admin/VillaCalendarPanel';
 import ComingSoon from '@/components/admin/ComingSoon';
+import CoinsPanel from '@/components/admin/CoinsPanel';
 import { GHOST } from '@/components/ui/panelClasses';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
@@ -31,6 +32,8 @@ const SECTIONS = [
   { id: 'calendar', label: 'Calendar', Icon: CalendarCheck, split: true },
   { id: 'prices', label: 'Prices', Icon: Tag },
   { id: 'discounts', label: 'Discounts', Icon: Percent },
+  // Same panel as the tours side: one coin balance is shared by both sites.
+  { id: 'coins', label: 'Coins', Icon: Coins },
   { id: 'ratings', label: 'Ratings', Icon: Star },
   { id: 'settings', label: 'Settings', Icon: Bell, split: true },
 ];
@@ -51,6 +54,7 @@ const SUBS = {
   calendar: 'Can the booking form read each villa\'s Airbnb calendar, and which nights are taken.',
   prices: 'Price per night. A stay is the nightly price times the nights.',
   discounts: 'Villa discounts.',
+  coins: 'Coin rewards: villa perks, earn and spend rules, and one guest\'s balance. Shared with the tours site.',
   ratings: 'Villa ratings.',
   settings: 'Your account, and which notifications reach this device.',
 };
@@ -150,6 +154,7 @@ export default function VillasDashboard({ demo = false }) {
               review a stay, their ratings will appear here.
             </ComingSoon>
           )}
+          {tab === 'coins' && <CoinsPanel onExpired={expired} />}
           {tab === 'settings' && <SettingsPanel onExpired={expired} onSignOut={signOut} />}
 
           {isBookings && err && <p className={ERR}>{err}</p>}
