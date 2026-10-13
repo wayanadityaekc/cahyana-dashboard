@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 // forwarded, built here - the query string is never echoed into the redirect.
 const CUE_TABS = new Set([
   'attention', 'upcoming', 'past', 'undated', 'dispatch', 'drivers',
-  'prices', 'promo', 'content', 'reviews', 'chat', 'settings',
+  'prices', 'promo', 'coins', 'content', 'reviews', 'chat', 'settings',
 ]);
 
 export default async function Page({ searchParams }) {

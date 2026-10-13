@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star, Bell, Truck, Users } from 'lucide-react';
+import { FileText, Percent, AlertTriangle, CalendarDays, History, HelpCircle, RefreshCw, Tag, MessageCircle , Star, Bell, Truck, Users, Coins } from 'lucide-react';
 import RailLayout from '@/components/ui/RailLayout';
 import AppBottomNav from '@/components/AppBottomNav';
 import Navbar from '@/components/Navbar';
@@ -20,6 +20,7 @@ import SettingsPanel from '@/components/admin/SettingsPanel';
 import DispatchPanel from '@/components/admin/DispatchPanel';
 import DriversPanel from '@/components/admin/DriversPanel';
 import DriverChatPanel from '@/components/admin/DriverChatPanel';
+import CoinsPanel from '@/components/admin/CoinsPanel';
 import { getJson, logout, Unauthorized } from '@/lib/api';
 
 // The owner's view of the bookings.
@@ -48,6 +49,8 @@ const SECTIONS = [
   // Next to Prices because it IS a price change - one percentage off every
   // program, with an end date. Not a payment option; see PromoPanel.
   { id: 'promo', label: 'Sale', Icon: Percent },
+  // Coin rewards: earn and spend rules, villa perks, one guest's balance.
+  { id: 'coins', label: 'Coins', Icon: Coins },
   // The site's own words. A change here is a commit and a rebuild, not a
   // setting - see ContentPanel.
   { id: 'content', label: 'Content', Icon: FileText },
@@ -165,6 +168,7 @@ export default function Dashboard({ demo = false }) {
   const isSettings = tab === 'settings';
   const isDispatch = tab === 'dispatch';
   const isDrivers = tab === 'drivers';
+  const isCoins = tab === 'coins';
   const chatCount = (unread || 0) + driverUnread;
   const query = q.trim().toLowerCase();
   const rows = data && isBookings ? (data[tab] || []).filter((g) => matches(g, query)) : [];
@@ -235,6 +239,8 @@ export default function Dashboard({ demo = false }) {
                         ? 'Pick a driver for each confirmed booking. They accept or decline in the driver app.'
                         : isDrivers
                           ? 'The driver logins. You create each one and hand over the username and password.'
+                          : isCoins
+                            ? 'Coin rewards: what guests earn, what a coin is worth, villa perks, and one guest\'s balance.'
                       : 'Change a price here and it applies straight away, no deploy.'}
         </p>
 
@@ -295,13 +301,14 @@ export default function Dashboard({ demo = false }) {
         {isDispatch && <DispatchPanel onExpired={expired} onGoDrivers={() => setTab('drivers')} />}
         {isDrivers && <DriversPanel onExpired={expired} />}
         {isPromo && <PromoPanel onExpired={expired} />}
+        {isCoins && <CoinsPanel onExpired={expired} />}
         {isContent && <ContentPanel onExpired={expired} />}
         {isReviews && <ReviewsPanel onExpired={expired} />}
         {isSettings && <SettingsPanel onExpired={expired} onSignOut={signOut} />}
         {/* The catch-all must exclude EVERY named section. Forget one and that
             tab silently renders the Prices panel instead - it happened when the
             Content section was added. */}
-        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && !isDispatch && !isDrivers && <PricesPanel onExpired={expired} scope="cue" />}
+        {!isBookings && !isChat && !isPromo && !isContent && !isReviews && !isSettings && !isDispatch && !isDrivers && !isCoins && <PricesPanel onExpired={expired} scope="cue" />}
 
         {isBookings && err && <p className={ERR}>{err}</p>}
         {isBookings && !err && !data && <p className={EMPTY}>Loading bookings...</p>}
