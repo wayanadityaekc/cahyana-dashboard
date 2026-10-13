@@ -8,20 +8,16 @@ import Switch from '@/components/ui/Switch';
 import { postJson, Unauthorized } from '@/lib/api';
 import { COIN_VILLAS } from '@/lib/coinLabels';
 
-// The villa perk menu: what a guest's coins can cover at each villa. A perk is
-// switched off, never deleted - the API has no delete, so a "Covered by coin"
-// note on an old stay always still points at a real row.
-
 const ROW = 'flex flex-wrap items-center gap-[var(--space-1)] py-[0.45rem] [&+&]:[border-top:1px_solid_var(--line)]';
 const LABEL_IN = `${FIELD_INPUT} !w-auto flex-1 min-w-[160px]`;
 const COINS_IN = `${FIELD_INPUT} !w-[76px]`;
 const ADD = 'flex flex-wrap items-end gap-[var(--space-1)] pt-[var(--space-1)]';
 
 function validItem(label, coins) {
-  const n = Number(coins);
+  const count = Number(coins);
   if (!String(label).trim()) return 'Give the perk a name.';
   if (String(label).trim().length > 120) return 'Keep the name under 120 characters.';
-  if (!Number.isInteger(n) || n < 1 || n > 100) return 'Coins must be a whole number from 1 to 100.';
+  if (!Number.isInteger(count) || count < 1 || count > 100) return 'Coins must be a whole number from 1 to 100.';
   return '';
 }
 
@@ -88,6 +84,7 @@ function AddPerk({ property, onSave }) {
   );
 }
 
+// Perks are switched off, never deleted, so a "Covered by coin" note on an old stay still points at a real row.
 export default function CoinMenu({ menu = [], onChanged, onExpired }) {
   // Returns '' when saved, otherwise the sentence to show under the row.
   async function save(body) {

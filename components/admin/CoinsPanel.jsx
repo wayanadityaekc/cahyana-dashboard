@@ -8,9 +8,7 @@ import CoinMenu from '@/components/admin/CoinMenu';
 import CoinGuest from '@/components/admin/CoinGuest';
 import { getJson, Unauthorized } from '@/lib/api';
 
-// Owner > Coins: the rules, the villa perk menu, and one guest at a time. Rules
-// and menu come from one answer (/api/coins/rules); the guest lookup stands on
-// its own so it still works when that answer fails.
+// The guest lookup stands apart from the rules answer so it still works when that answer fails.
 export default function CoinsPanel({ onExpired }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');

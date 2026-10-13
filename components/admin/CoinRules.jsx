@@ -7,16 +7,13 @@ import { CARD, HEAD, NOTE, ERR, OKMSG, BTNS, CTA } from '@/components/ui/panelCl
 import { postJson, Unauthorized } from '@/lib/api';
 import { COIN_CATEGORIES, EARN_LABEL, PCT_LABEL } from '@/lib/coinLabels';
 
-// The two numbers per category: coins a paid booking earns, and how much one coin
-// takes off a line. Both ranges are the API's (earn 0-50, % 1-100), checked here
-// first so a typo is caught before the round trip, and again by the API.
-
 const TABLE = 'w-full border-collapse font-body text-body text-green';
 const TH = 'text-left font-body text-small font-medium text-muted pb-[var(--space-1)] pr-[var(--space-2)]';
 const TD = 'py-[0.35rem] pr-[var(--space-2)] align-middle';
 const NUM = `${FIELD_INPUT} !w-[88px]`;
 
 const SHORT = { tour: 'Tour', experience: 'Experience', transfer: 'Transfer', charter: 'Charter', villa: 'Villa' };
+// The API's own ranges, checked here first so a typo is caught before the round trip.
 const EARN_RANGE = [0, 50];
 const PCT_RANGE = [1, 100];
 
@@ -25,12 +22,11 @@ function toText(obj = {}) {
 }
 
 function whole(value, [min, max]) {
-  const n = Number(value);
-  return value !== '' && Number.isInteger(n) && n >= min && n <= max ? n : null;
+  const number = Number(value);
+  return value !== '' && Number.isInteger(number) && number >= min && number <= max ? number : null;
 }
 
-// The package bonus per stay package (coin_package_bonus), from the API rules answer.
-// Read-only here; an array or a { package: coins } map is accepted.
+// Read-only; the API may answer coin_package_bonus as an array or a { package: coins } map.
 function packageRows(data) {
   const raw = data.packageBonus || data.package_bonus;
   if (!raw) return null;
@@ -38,7 +34,7 @@ function packageRows(data) {
   return Object.keys(raw).map((id) => ({ id, coins: raw[id] }));
 }
 
-export default function CoinRules({ data, onSaved, onExpired }) {
+export default function CoinRules({ data = {}, onSaved, onExpired }) {
   const [earn, setEarn] = useState(() => toText(data.earn));
   const [pct, setPct] = useState(() => toText(data.pct));
   const [busy, setBusy] = useState(false);

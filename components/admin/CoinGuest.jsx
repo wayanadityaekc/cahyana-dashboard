@@ -8,10 +8,6 @@ import ConfirmBar from '@/components/ui/ConfirmBar';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
 import { sourceWord, statusWord, signed, isLive } from '@/lib/coinLabels';
 
-// One guest's coins, found by the email on their account: balance, what expires
-// next, the history, and a manual correction. A minus asks first - it takes coins
-// away from a real guest.
-
 const ROW = 'flex flex-wrap items-end gap-[var(--space-1)]';
 const BIG = 'font-body text-h2 font-semibold text-gold m-0 tabular-nums';
 const LIST = 'flex flex-col m-0 p-0 list-none';
@@ -79,10 +75,11 @@ export default function CoinGuest({ onExpired }) {
   // Both sides check: the range and the note here, then the API again.
   function start() {
     setAdjErr(''); setAdjOk('');
-    const n = Number(delta);
-    if (!Number.isInteger(n) || n === 0 || n < -100 || n > 100) { setAdjErr('Coins must be a whole number from -100 to 100, not 0.'); return; }
+    const amount = Number(delta);
+    if (!Number.isInteger(amount) || amount === 0 || amount < -100 || amount > 100) { setAdjErr('Coins must be a whole number from -100 to 100, not 0.'); return; }
     if (!note.trim()) { setAdjErr('Write a note: why the coins change. The guest\'s history keeps it.'); return; }
-    if (n < 0) { setAsking(true); return; }
+    // A minus asks first: it takes coins away from a real guest.
+    if (amount < 0) { setAsking(true); return; }
     apply();
   }
 

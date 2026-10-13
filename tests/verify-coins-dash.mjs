@@ -36,7 +36,9 @@ function ok(cond, msg) {
 }
 
 // ---- stub cahyana-api -------------------------------------------------------
-const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+function day(offset) {
+  return new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+}
 const stub = {
   calls: [],
   earn: { villa: 1, tour: 2, experience: 2, transfer: 2, charter: 2 },
@@ -177,7 +179,9 @@ if (!(await waitForDash())) {
   stop(1);
 }
 
-const callsTo = (route) => stub.calls.filter((call) => call.route === route);
+function callsTo(route) {
+  return stub.calls.filter((call) => call.route === route);
+}
 const browser = await chromium.launch({ executablePath: PW_BIN });
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 async function shot(page, name) {
@@ -190,7 +194,12 @@ async function signIn(page, user, pass) {
   await page.fill('#adm-user', user);
   await page.fill('#adm-pass', pass);
   await page.click('button[type=submit]');
-  return page.waitForURL((u) => new URL(u).pathname === '/', { timeout: 20000 }).then(() => true).catch(() => false);
+  try {
+    await page.waitForURL((url) => new URL(url).pathname === '/', { timeout: 20000 });
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 async function openSection(page, width, id, label) {
   if (width < 993) {
@@ -202,8 +211,21 @@ async function openSection(page, width, id, label) {
   }
   await page.waitForTimeout(600);
 }
-const text = async (loc) => { try { return await loc.first().innerText({ timeout: 4000 }); } catch (e) { return ''; } };
-const seen = async (loc, ms = 5000) => { try { await loc.first().waitFor({ timeout: ms }); return true; } catch (e) { return false; } };
+async function text(locator) {
+  try { return await locator.first().innerText({ timeout: 4000 }); } catch (e) { return ''; }
+}
+async function seen(locator, timeoutMs = 5000) {
+  try { await locator.first().waitFor({ timeout: timeoutMs }); return true; } catch (e) { return false; }
+}
+// A signed-in owner's cookies, for a fresh context at another viewport.
+async function ownerState() {
+  const context = await browser.newContext();
+  const login = await context.newPage();
+  await signIn(login, 'owner', 'pw');
+  const state = await context.storageState();
+  await context.close();
+  return state;
+}
 
 try {
   // ---- the door: no cookie, a driver cookie, a forged owner cookie ----------
@@ -305,9 +327,9 @@ try {
   const noteStyle = await notes.first().evaluate((node) => {
     const style = getComputedStyle(node);
     const rect = node.getBoundingClientRect();
-    return { bg: style.backgroundColor, border: style.borderTopColor, weight: style.fontWeight, w: rect.width, h: rect.height, text: node.innerText };
+    return { bg: style.backgroundColor, border: style.borderTopColor, weight: style.fontWeight, width: rect.width, height: rect.height, text: node.innerText };
   }).catch(() => null);
-  ok(noteStyle && noteStyle.w > 100 && noteStyle.h > 16, `covered note has no real size: ${JSON.stringify(noteStyle)}`);
+  ok(noteStyle && noteStyle.width > 100 && noteStyle.height > 16, `covered note has no real size: ${JSON.stringify(noteStyle)}`);
   ok(noteStyle && noteStyle.bg !== 'rgba(0, 0, 0, 0)' && noteStyle.bg !== 'rgb(255, 255, 255)', `covered note has no background of its own: ${noteStyle && noteStyle.bg}`);
   ok(noteStyle && noteStyle.weight === '600', `covered note is not semibold: ${noteStyle && noteStyle.weight}`);
   ok(noteStyle && noteStyle.text.includes('Airport pick-up'), 'the line-item covered note lost its perk name');
@@ -350,7 +372,12 @@ try {
   ok(await seen(card.locator('[data-booking-coins-ok]')), 'refund showed no result');
   const reverse = callsTo('POST /api/admin/coins/reverse').at(-1);
   ok(callsTo('POST /api/admin/coins/reverse').length === reversesBefore + 1 && reverse.body.ref === 'UPV-AB12CD', 'refund did not send the ref');
-  const settled = await page.waitForFunction(() => document.querySelectorAll('[data-covered-note]').length === 1, null, { timeout: 5000 }).then(() => true).catch(() => false);
+  let settled = true;
+  try {
+    await page.waitForFunction(() => document.querySelectorAll('[data-covered-note]').length === 1, null, { timeout: 5000 });
+  } catch (e) {
+    settled = false;
+  }
   ok(settled, `returned perk rows still show as covered after the refund (${await page.locator('[data-covered-note]').count()} notes)`);
   await shot(page, 'villa-after-refund');
 
@@ -365,14 +392,7 @@ try {
   await ownerCtx.close();
 
   // ---- phone width -----------------------------------------------------------
-  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await (async () => {
-    const ctx = await browser.newContext();
-    const login = await ctx.newPage();
-    await signIn(login, 'owner', 'pw');
-    const state = await ctx.storageState();
-    await ctx.close();
-    return state;
-  })() });
+  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ownerState() });
   const phonePage = await phone.newPage();
   await phonePage.goto(`${DASH}/cue`, { waitUntil: 'networkidle' });
   await openSection(phonePage, 390, 'coins', 'Coins');

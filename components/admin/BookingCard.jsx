@@ -67,8 +67,7 @@ function money(g) {
   return null;
 }
 
-// Perks paid with coins at checkout ride in the villa line's items. Staff must not
-// charge for them, so they are pulled out of the grey text and shown as a note.
+// Coin-paid perks ride in the villa line's items; staff must not charge for them, so they get their own note.
 function VillaItems({ items }) {
   const { plain, covered } = splitCovered(items);
   return (
@@ -145,7 +144,7 @@ export default function BookingCard({ g, side = 'cue' }) {
 
       {g.why && <p className={WHY}>{g.why}</p>}
 
-      <BookingCoins g={g} side={side} />
+      <BookingCoins group={g} side={side} />
     </article>
   );
 }

@@ -4,9 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { DANGER, GHOST } from '@/components/ui/panelClasses';
 
-// An inline "are you sure" for an action that takes something away (coins off a
-// guest, a refund). Not window.confirm: the global rules ban native dialogs. It
-// sits where the action was pressed, takes focus, and Escape cancels it.
+// Inline, not window.confirm: the global rules ban native dialogs.
 const BOX =
   'flex flex-col gap-[var(--space-1)] p-[0.7rem_0.9rem] rounded-[var(--r-md)] bg-white ' +
   '[border:1px_solid_var(--color-err)] font-body text-small text-green';
@@ -28,7 +26,7 @@ export default function ConfirmBar({ message = 'Are you sure?', confirmLabel = '
       role="alertdialog"
       aria-label={message}
       data-confirm-bar
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
+      onKeyDown={(event) => { if (event.key === 'Escape') onCancel(); }}
     >
       <p className={MSG}><AlertTriangle strokeWidth={1.7} aria-hidden="true" /><span>{message}</span></p>
       {children}

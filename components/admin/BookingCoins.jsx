@@ -8,11 +8,6 @@ import ConfirmBar from '@/components/ui/ConfirmBar';
 import { getJson, postJson, Unauthorized } from '@/lib/api';
 import { sourceWord, statusWord, signed, isLive, COVERED } from '@/lib/coinLabels';
 
-// The coin block on one booking card: its ledger rows, "Refund coins" and, on a
-// villa stay, "Redeem perk". Closed on the tours side (one request per open card,
-// not per card on the page - the admin limiter is shared). Open on the villa side,
-// where staff must see every "Covered by coin" note without a click.
-
 const WRAP = 'mt-[0.6rem] pt-[0.6rem] [border-top:1px_solid_var(--line)] flex flex-col gap-[var(--space-1)]';
 const TOGGLE =
   'inline-flex items-center gap-[0.4rem] self-start bg-transparent border-none p-0 cursor-pointer font-body text-small font-semibold text-gold ' +
@@ -116,9 +111,10 @@ function RedeemPerk({ refKey, property, onDone }) {
   );
 }
 
-export default function BookingCoins({ g, side = 'cue' }) {
-  const refKey = g.ref;
-  const stay = g.lines.find((line) => line.type === 'villa');
+export default function BookingCoins({ group, side = 'cue' }) {
+  const refKey = group.ref;
+  const stay = group.lines.find((line) => line.type === 'villa');
+  // Closed on tours (the admin limiter is shared, so one request per opened card); open on villas so staff see every note.
   const [open, setOpen] = useState(side === 'villa');
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState('');
@@ -164,7 +160,7 @@ export default function BookingCoins({ g, side = 'cue' }) {
 
   return (
     <div className={WRAP} data-booking-coins={refKey}>
-      <button type="button" className={TOGGLE} aria-expanded={open} onClick={() => setOpen((v) => !v)} data-coins-toggle>
+      <button type="button" className={TOGGLE} aria-expanded={open} onClick={() => setOpen((wasOpen) => !wasOpen)} data-coins-toggle>
         <Coins strokeWidth={1.7} aria-hidden="true" />Coins
         {rows && <span className="font-normal text-muted tabular-nums">{liveRows.length} row{liveRows.length === 1 ? '' : 's'}</span>}
         <ChevronDown strokeWidth={1.7} aria-hidden="true" className={open ? 'rotate-180' : ''} />
@@ -202,7 +198,7 @@ export default function BookingCoins({ g, side = 'cue' }) {
 
           {mode === 'redeem' && stay && (
             <>
-              <RedeemPerk refKey={refKey} property={stay.service} onDone={(msg) => { setDone(msg); setMode(''); load(); }} />
+              <RedeemPerk refKey={refKey} property={stay.service} onDone={(message) => { setDone(message); setMode(''); load(); }} />
               <button type="button" className={`${GHOST} self-start`} onClick={() => setMode('')} data-redeem-close>Close</button>
             </>
           )}
